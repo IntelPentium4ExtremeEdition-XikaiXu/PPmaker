@@ -1,10 +1,51 @@
 import tkinter as tk
+import serial 
+import struct
+
 from tkinter import messagebox
 
 # Preset account (default account)
 users = {
     "zhant88": "password123"  # default password
 }
+serial_data_rx = serial.Serial('COM3', 9600)
+serial_data_tx = serial.Serial('COM3', 9600)
+#current I/O system
+clock_speed = 0x00
+voltage = 0x00
+mode = 0x00
+check_part = 0x00
+
+def input():
+    data = serial_data_rx.read(4)
+
+    if len(data) == 4:
+        byte1, byte2, byte3, byte4 = struct.unpack('BBBB', data)
+
+        print(f"Byte 1: {byte1:08b}")
+        print(f"Byte 2: {byte2:08b}")
+        print(f"Byte 3: {byte3:08b}")
+        print(f"Byte 4: {byte4:08b}")
+        return byte1, byte2, byte3, byte4
+    else:
+        serial_data_tx = 'Error: Could not read 4 bytes from the serial port'
+        return None
+
+    try:
+        while True:
+            result = receive_serial_data()
+            if result:
+            pass
+
+except KeyboardInterrupt:
+    ser.close()
+    serial_data_tx = "Serial connection closed"
+
+def output():
+    data = struct.pack('BBBB', clock_speed, voltage, mode, check_part)
+    serial_data_tx.write(data)
+
+
 
 # New user sign up
 def register():
