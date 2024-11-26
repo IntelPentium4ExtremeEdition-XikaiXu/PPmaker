@@ -1,0 +1,16 @@
+{
+    "password": "$2b$12$YlVTYc3nVNoJgfk8AgHrz.miUjR72DOCG6e3.IapkbfPMnRGiu18u",
+    "parameters": {
+        "AOO": [
+            {
+                "Lower Rate Limit": 30.0,
+                "Upper Rate Limit": 60.0,
+                "Amplitude": 0.5,
+                "Pulse Width": 0.5
+            }
+        ],
+        "VOO": [],
+        "AAI": [],
+        "VVI": []
+    }
+}
