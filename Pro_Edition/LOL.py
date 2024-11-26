@@ -3,6 +3,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
 from tkinter import filedialog, messagebox
+import matplotlib.animation as animation
 
 class EgramPlotter:
     def __init__(self, parent_window=None):
@@ -35,7 +36,7 @@ class EgramPlotter:
             return False
 
     def plot_egram(self):
-        """Plot the loaded egram data."""
+        """Plot the loaded egram data with animation."""
         if self.data is None:
             messagebox.showerror("Error", "No data to plot. Please load a CSV file first.")
             return
@@ -51,7 +52,21 @@ class EgramPlotter:
         ax.set_xlabel("X-axis")
         ax.set_ylabel("Y-axis")
         ax.set_title("Electrogram Plot")
-        ax.plot(self.xpoints, self.ypoints, 'bo-', linewidth=1)
+        ax.set_xlim(min(self.xpoints), max(self.xpoints))
+        ax.set_ylim(min(self.ypoints), max(self.ypoints))
+
+        # Line object to update
+        line, = ax.plot([], [], 'bo-', linewidth=1)
+
+        # Animation function
+        def update(frame):
+            line.set_data(self.xpoints[:frame], self.ypoints[:frame])
+            return line,
+
+        # Set up the animation
+        ani = animation.FuncAnimation(
+            figure, update, frames=len(self.xpoints), interval=100, blit=True
+        )
 
         # Add the plot to the window
         canvas = FigureCanvasTkAgg(figure, plot_window)
@@ -62,13 +77,3 @@ class EgramPlotter:
         """Start the process of loading and plotting egram data."""
         if self.load_csv():
             self.plot_egram()
-
-
-
-from egram_plot import EgramPlotter
-
-def show_egram_graph():
-    plotter = EgramPlotter(main_window)
-    plotter.start()
-egram_button = tk.Button(main_window, text="Show Electrogram", command=show_egram_graph)
-egram_button.pack(pady=20)

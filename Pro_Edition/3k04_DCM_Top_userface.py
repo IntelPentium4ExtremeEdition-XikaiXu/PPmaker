@@ -4,6 +4,13 @@ import bcrypt
 import json
 import os
 from system_transport import SerialConnection
+from LOL import EgramPlotter
+
+
+def show_egram_graph():
+    messagebox.showinfo("Electrogram", "Displaying electrogram...")
+
+
 
 # File for storing user credentials
 base_folder = "storage_system"
@@ -203,11 +210,17 @@ def save_parameters(parameters):
     with open("parameters.json", "w") as file:
         json.dump(parameters, file, indent=4)
 
-# Main entry point for GUI-based application
+def show_egram_graph():
+    plotter = EgramPlotter(root)  # 使用 root 窗口作为父窗口
+    plotter.start()  # 开始加载 CSV 和绘图流程
+
+
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("User Login")
     root.geometry("300x200")
+    
+    # 定义其他 UI 组件
     tk.Label(root, text="Username:").pack(pady=10)
     entry_username = tk.Entry(root)
     entry_username.pack(pady=5)
@@ -216,5 +229,12 @@ if __name__ == "__main__":
     entry_password.pack(pady=5)
     tk.Button(root, text="Login", command=login).pack(pady=10)
     tk.Button(root, text="Register", command=open_register_window).pack(pady=5)
+    
+    # 定义 egram_button
+    egram_button = tk.Button(root, text="Show Electrogram", command=show_egram_graph)
+    egram_button.pack(pady=20)
 
     root.mainloop()
+
+
+
