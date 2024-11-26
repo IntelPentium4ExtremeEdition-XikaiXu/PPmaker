@@ -4,86 +4,83 @@ import bcrypt
 import json
 import os
 from system_transport import SerialConnection
+
 # File for storing user credentials
+base_folder = "storage_system"
 user_file = "users.json"
 
 # File for storing parameters
-parameters_file = "parameters.json"
+os.makedirs(base_folder, exist_ok=True)
 
 # Invite code for registration
-invite_code = "123456"
+invite_code = "114514"
 
-# Load user data
+# PARAMLABELS for all modes
+PARAMLABELS = [
+    "Lower Rate Limit", "Upper Rate Limit", "Atrial Amplitude", "Ventricular Amplitude",
+    "Atrial Pulsewidth", "Ventricular Pulsewidth", "Atrial Refractory Period",
+    "Ventricular Refractory Period", "Atrium Sense", "Ventricle Sense", "MSR", "Recovery Time",
+    "Reaction Time", "Response Factor", "Activity Threshold", "AV Delay", "Additional Parameter"
+]
+
+# 加载用户数据
 def load_users():
     if os.path.exists(user_file):
         with open(user_file, 'r') as file:
             return json.load(file)
     return {}
 
-# Save user data
+# 保存用户数据
 def save_users(users):
     with open(user_file, 'w') as file:
         json.dump(users, file, indent=4)
 
-# Load parameters data
-def load_parameters():
-    if os.path.exists(parameters_file):
-        with open(parameters_file, 'r') as file:
-            return json.load(file)
-    return {"AOO": [], "VOO": [], "AAI": [], "VVI": []}
-
-# Save parameters data
-def save_parameters(parameters):
-    with open(parameters_file, 'w') as file:
-        json.dump(parameters, file, indent=4)
-
-# Initialize global variables
+# 初始化用户数据
 users = load_users()
-parameters = load_parameters()
 
-# Registration window
+# 注册窗口
 def open_register_window():
     register_window = tk.Toplevel()
-    register_window.title("Register")
+    register_window.title("signed")
 
-    tk.Label(register_window, text="Username:").pack(pady=5)
+    tk.Label(register_window, text="username:").pack(pady=5)
     entry_username = tk.Entry(register_window)
     entry_username.pack(pady=5)
 
-    tk.Label(register_window, text="Password:").pack(pady=5)
+    tk.Label(register_window, text="password:").pack(pady=5)
     entry_password = tk.Entry(register_window, show="*")
     entry_password.pack(pady=5)
-
-    tk.Label(register_window, text="Invite Code:").pack(pady=5)
-    entry_invite_code = tk.Entry(register_window)
-    entry_invite_code.pack(pady=5)
 
     def register():
         username = entry_username.get()
         password = entry_password.get()
-        code = entry_invite_code.get()
 
-        if len(users) >= 10:
-            messagebox.showerror("ERROR", "User limit reached. Cannot register more users.")
-            register_window.destroy()
-            return
-        if code != invite_code:
-            messagebox.showerror("ERROR", "Invalid invite code.")
-            return
         if username in users:
-            messagebox.showerror("ERROR", "Username already exists.")
-            return
-        if len(password) < 6:
-            messagebox.showerror("ERROR", "Password must be at least 6 characters long.")
+            messagebox.showerror("sorry", "this user is already signed")
             return
 
+        if len(password) < 6:
+            messagebox.showerror("sorry", "password must longer than 6")
+            return
+
+        # 创建用户文件夹
+        user_folder = os.path.join(base_folder, username)
+        os.makedirs(user_folder, exist_ok=True)
+
+        # 初始化用户参数文件
+        param_file = os.path.join(user_folder, f"{username}_parameters.txt")
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        with open(param_file, 'w') as file:
+            file.write(f"password: {hashed_password.decode('utf-8')}\n")
+            file.write("aoo: 0\nvoo: 0\naooR: 0\nvooR: 0\n")
+            file.write("aii: 0\nvii: 0\naiiR: 0\nviiR: 0\n")
+
         users[username] = hashed_password.decode('utf-8')
         save_users(users)
-        messagebox.showinfo("SUCCESS", "Registration successful!")
+        messagebox.showinfo("success", "signed")
         register_window.destroy()
 
-    tk.Button(register_window, text="Register", command=register).pack(pady=10)
+    tk.Button(register_window, text="注册", command=register).pack(pady=10)
 
 # Login functionality
 def login():
@@ -113,7 +110,7 @@ def open_main_window():
 
     mode_menu = tk.Menu(menu_bar, tearoff=0)
     mode_menu.add_command(label="Mode Selection", command=open_mode_selection)
-    mode_menu.add_command(label="Ready ti send?", command=ready_on_serial)
+    mode_menu.add_command(label="Ready to send?", command=ready_on_serial)
     menu_bar.add_cascade(label="Mode", menu=mode_menu)
 
     main_window.config(menu=menu_bar)
@@ -121,11 +118,11 @@ def open_main_window():
 
 # Device status display
 def show_device_status():
-    messagebox.showinfo("Device Status", "Device Connected: Yes\nPort: N/A\"")
+    messagebox.showinfo("Device Status", "Device Connected: Yes\nPort: N/A")
 
 # Refresh connection status
 def refresh_connection_status():
-    messagebox.showinfo("Connection Status", "Connection Refreshed.\nStatus: ",SerialConnection.get_connection_status(),"")
+    messagebox.showinfo("Connection Status", "Connection Refreshed.\nStatus: ", SerialConnection.get_connection_status(), "")
 
 def ready_on_serial():
     send_window = tk.Toplevel()
@@ -134,27 +131,28 @@ def ready_on_serial():
     tk.Button(send_window, text="AAI", command=lambda: SerialConnection.send_data(mode='AAI')).pack(pady=5)
     tk.Button(send_window, text="VOO", command=lambda: SerialConnection.send_data(mode='VOO')).pack(pady=5)
     tk.Button(send_window, text="VVI", command=lambda: SerialConnection.send_data(mode='VVI')).pack(pady=5)
+    tk.Button(send_window, text="AOOR", command=lambda: SerialConnection.send_data(mode='AOOR')).pack(pady=5)
+    tk.Button(send_window, text="AAIR", command=lambda: SerialConnection.send_data(mode='AAIR')).pack(pady=5)
+    tk.Button(send_window, text="VOOR", command=lambda: SerialConnection.send_data(mode='VOOR')).pack(pady=5)
+    tk.Button(send_window, text="VVIR", command=lambda: SerialConnection.send_data(mode='VVIR')).pack(pady=5)
 
 # Mode selection
 def open_mode_selection():
     mode_window = tk.Toplevel()
     mode_window.title("Mode Selection")
 
-    tk.Button(mode_window, text="AOO Mode", command=lambda: open_mode("AOO")).pack(pady=5)
-    tk.Button(mode_window, text="VOO Mode", command=lambda: open_mode("VOO")).pack(pady=5)
-    tk.Button(mode_window, text="AAI Mode", command=lambda: open_mode("AAI")).pack(pady=5)
-    tk.Button(mode_window, text="VVI Mode", command=lambda: open_mode("VVI")).pack(pady=5)
+    for mode in ["AOO", "VOO", "AAI", "VVI", "AOOR", "VOOR", "AAIR", "VVIR"]:
+        tk.Button(mode_window, text=f"{mode} Mode", command=lambda m=mode: open_mode(m)).pack(pady=5)
 
 # Open specific mode window
 def open_mode(mode):
     mode_window = tk.Toplevel()
     mode_window.title(f"{mode} Parameters")
-
+    
     tk.Label(mode_window, text=f"Enter parameters for {mode} mode").pack(pady=10)
 
     entry_fields = {}
-    labels = ["Lower Rate Limit", "Upper Rate Limit", "Amplitude", "Pulse Width"]
-    for label in labels:
+    for label in PARAMLABELS:
         tk.Label(mode_window, text=label).pack(pady=5)
         entry = tk.Entry(mode_window)
         entry.pack(pady=5)
@@ -162,8 +160,9 @@ def open_mode(mode):
 
     def save_mode_parameters():
         try:
-            data = {label: round(float(entry_fields[label].get()), 2) for label in labels}
-            if validate_input(data["Lower Rate Limit"], data["Upper Rate Limit"], data["Amplitude"], data["Pulse Width"]):
+            data = {label: round(float(entry_fields[label].get()), 2) for label in PARAMLABELS}
+            # Validate input
+            if validate_input(data["Lower Rate Limit"], data["Upper Rate Limit"], data["Atrial Amplitude"], data["Ventricular Amplitude"]):
                 save_parameters_to_file(mode, data)
                 mode_window.destroy()
         except ValueError as e:
@@ -173,39 +172,52 @@ def open_mode(mode):
 
 # Save parameters to file
 def save_parameters_to_file(mode, data):
+    parameters = load_parameters()  # Implement the load_parameters function to load parameters from a file
+    if mode not in parameters:
+        parameters[mode] = []
     parameters[mode].append(data)
     save_parameters(parameters)
     messagebox.showinfo("Success", f"Parameters for {mode} saved successfully!")
 
 # Input validation
-def validate_input(LRL, URL, amplitude, pulse_width):
+def validate_input(LRL, URL, atrial_amplitude, ventricular_amplitude):
     if not (30 <= LRL <= 150):
         raise ValueError("Lower Rate Limit must be between 30 and 150.")
     if not (50 <= URL <= 180):
         raise ValueError("Upper Rate Limit must be between 50 and 180.")
-    if not (0.5 <= amplitude <= 5.0):
-        raise ValueError("Amplitude must be between 0.5V and 5.0V.")
-    if not (0.05 <= pulse_width <= 1.9):
-        raise ValueError("Pulse Width must be between 0.05ms and 1.9ms.")
-    if URL <= LRL:
-        raise ValueError("Upper Rate Limit must be greater than Lower Rate Limit.")
+    if not (0.5 <= atrial_amplitude <= 5.0):
+        raise ValueError("Atrial Amplitude must be between 0.5V and 5.0V.")
+    if not (0.5 <= ventricular_amplitude <= 5.0):
+        raise ValueError("Ventricular Amplitude must be between 0.5V and 5.0V.")
+    # Add more validation logic as needed for other parameters
     return True
 
+# Loading and saving parameters from/to a file
+def load_parameters():
+    if os.path.exists("parameters.json"):
+        with open("parameters.json", "r") as file:
+            return json.load(file)
+    return {}
 
+def save_parameters(parameters):
+    with open("parameters.json", "w") as file:
+        json.dump(parameters, file, indent=4)
 
-# Program entry point
-login_window = tk.Tk()
-login_window.title("DCM System Login")
+# Main entry point for GUI-based application
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("User Login")
+    root.geometry("300x200")
 
-tk.Label(login_window, text="Username:").pack(pady=5)
-entry_username = tk.Entry(login_window)
-entry_username.pack(pady=5)
+    tk.Label(root, text="Username:").pack(pady=10)
+    entry_username = tk.Entry(root)
+    entry_username.pack(pady=5)
 
-tk.Label(login_window, text="Password:").pack(pady=5)
-entry_password = tk.Entry(login_window, show="*")
-entry_password.pack(pady=5)
+    tk.Label(root, text="Password:").pack(pady=10)
+    entry_password = tk.Entry(root, show="*")
+    entry_password.pack(pady=5)
 
-tk.Button(login_window, text="Register", command=open_register_window).pack(pady=5)
-tk.Button(login_window, text="Login", command=login).pack(pady=5)
+    tk.Button(root, text="Login", command=login).pack(pady=10)
+    tk.Button(root, text="Register", command=open_register_window).pack(pady=5)
 
-login_window.mainloop()
+    root.mainloop()
