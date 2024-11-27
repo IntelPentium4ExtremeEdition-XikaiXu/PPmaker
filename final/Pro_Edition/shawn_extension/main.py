@@ -303,7 +303,7 @@ class DCMWindow(tk.Frame):
             username (string): stores the username
         """
 
-        title_label = tk.Label(self, text="Pacemaker Project", font=("Arial", 24, "bold"), bg=self.BACKGROUND_COLOR)
+        title_label = tk.Label(self, text="Quartz Extreme PProject", font=("Arial", 24, "bold"), bg=self.BACKGROUND_COLOR)
         title_label.pack(pady=20)
 
         self.__topFrame = Frame(self, bg=self.BACKGROUND_COLOR, width=1280, height=30)
@@ -369,10 +369,10 @@ class DCMWindow(tk.Frame):
         print(write)
         while not write:
             if not (sc.getCurrentPort() is None):
-                if not write:
-                    sc.serialWrite(
-                        b'\x16\x22\00\x3C\x78\x00\x00\xA0\x40\x00\x00\xA0\x40\x02\x02\xFA\x00\xFA\x00\x00\x00\x80\x40'
-                        b'\x00\x00\x80\x40\x64\x02\x0A\x10\xCD\xCC\x8C\x3F\x64\x00')
+                if not write:        #match recieve aoo amp[               ][thers][arp           ][  axp             ][asp   ][agp   ][              ][      ][      ][      ]
+                    sc.serialWrite(b'\x16\x55\00\00\x00\x64\xFF\xff\xff\xfc\xA0\x40\x00\x42\x00\x00\x01\x40\x00\x00\x01\x40\x00\x00\x78\xFF\xff\xff\xfc\x40\x64\x00\x08\x00\x0A\x00\x1E')
+                    print("x16 sended")
+                    print("extendbit sended")
                     temp = sc.serialRead()
                     temp = 0
                     try:
@@ -573,9 +573,12 @@ class DCMWindow(tk.Frame):
                     alt.writeText(text)
 
         print(arr)
+        sc.serialWrite(b'\x16\x55\00\00\x00\x64\00\x3c\x00\x00\xA0\x40\x00\x42\x00\x00\x01\x40\x00\x00\x01\x40\x00\x00\x78\x00\x78\x00\x80\x40\x64\x00\x08\x00\x0A\x00\x1E')
+        
         val = b'\x16\x55'
         for item in arr:
             val = val + item
+            print(arr)
         print(self.__currentPort)
         t1_sc = threading.Thread(target=self.serialCommWrite, args=(val,))
         t1_sc.start()
@@ -728,7 +731,7 @@ class ContentWindow(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.__parent = parent
         parent.title("DCM")
-        parent.geometry("1200x700")
+        parent.geometry("800x780")
         parent.resizable(True, True)
         parent.config(bg="White")
         self.__loginWindow = LoginWindow(self)
@@ -744,13 +747,14 @@ class ContentWindow(tk.Frame):
         self.__DCM.resetMode()
         self.__DCM.pack()
 
+    
     def logout(self):
         """ The method disables the DCM interface and enables the login window screen, along with formatting
         """
         self.__DCM.pack_forget()
         self.__loginWindow.setPaddingVisible()
         self.__loginWindow.pack()
-
+    
 
 # Main script
 if __name__ == "__main__":

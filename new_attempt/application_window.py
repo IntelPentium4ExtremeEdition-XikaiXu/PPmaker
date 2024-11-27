@@ -4,7 +4,7 @@ from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 import pickle
-from ParameterManager import ParameterManager  
+from PPmaker.new_attempt.branch.ParameterManager import ParameterManager  
 import struct
 import time
 

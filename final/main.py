@@ -336,7 +336,8 @@ class DCMWindow(tk.Frame):
                     print("extendbit sended")
 
                     temp = sc.serialRead()
-                    temp = 0
+                    
+
                     try:
                         val, = struct.unpack('d', temp[0:8])
                         if (val > 0.4) and (val < 3.5):
@@ -681,7 +682,7 @@ class ContentWindow(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.__parent = parent
         parent.title("DCM")
-        parent.geometry("760x700")
+        parent.geometry("760x680")
         parent.resizable(True, True)
         parent.config(bg="White")
         self.__loginWindow = LoginWindow(self)
