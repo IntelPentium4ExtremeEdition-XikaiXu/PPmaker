@@ -3,12 +3,12 @@ from tkinter import messagebox
 import bcrypt
 import json
 import os
-from system_transport import SerialConnection
+#from system_transport import SerialConnection
 from LOL import EgramPlotter
 
 
-def show_egram_graph():
-    messagebox.showinfo("Electrogram", "Displaying electrogram...")
+#def show_egram_graph():
+#   messagebox.showinfo("Electrogram", "Displaying electrogram...")
 
 
 
@@ -89,6 +89,7 @@ def open_register_window():
 
     tk.Button(register_window, text="注册", command=register).pack(pady=10)
 
+
 # Login functionality
 def login():
     username = entry_username.get()
@@ -104,10 +105,17 @@ def login():
 def open_main_window():
     main_window = tk.Tk()
     main_window.title("DCM Main Interface")
-    main_window.geometry("400x300")
+    main_window.geometry("800x480")
 
     menu_bar = tk.Menu(main_window)
 
+    # Add an image
+    image = Image.open("example.jpg").resize((400, 300))  # Resize to 400x300
+    photo = ImageTk.PhotoImage(image)
+    label = tk.Label(main_window, image=photo)
+    label.image = image  # Keep a reference to avoid garbage collection
+    label.pack(pady=20)
+    
     operation_menu = tk.Menu(menu_bar, tearoff=0)
     operation_menu.add_command(label="Device Status", command=show_device_status)
     operation_menu.add_command(label="Refresh Connection", command=refresh_connection_status)
@@ -231,8 +239,8 @@ if __name__ == "__main__":
     tk.Button(root, text="Register", command=open_register_window).pack(pady=5)
     
     # 定义 egram_button
-    egram_button = tk.Button(root, text="Show Electrogram", command=show_egram_graph)
-    egram_button.pack(pady=20)
+    #egram_button = tk.Button(root, text="Show Electrogram", command=show_egram_graph)
+    #egram_button.pack(pady=20)
 
     root.mainloop()
 
