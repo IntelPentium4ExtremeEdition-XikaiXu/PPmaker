@@ -338,61 +338,6 @@ class DCMWindow(tk.Frame):
                     a.plot(tvlist, voltageV, color='green')
                     self.canvas.draw()
 
-        '''
-            def __modeSelect(self):
-                if (self.__modeList.get() == "AOO" ):
-                    self.__hideParameter(
-                        ["readonly", "readonly", "readonly", "disabled", "readonly", "disabled", "disabled", "disabled",
-                        "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
-                    self.__currentMode = "AOO"
-                elif self.__modeList.get() == "AAI":
-                    self.__hideParameter(
-                        ["readonly", "readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled",
-                        "readonly", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
-                    self.__currentMode = "AAI"
-                elif self.__modeList.get() == "VOO":
-                    self.__hideParameter(
-                        ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "disabled",
-                        "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
-                    self.__currentMode = "VOO"
-                elif self.__modeList.get() == "VVI":
-                    self.__hideParameter(
-                        ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "readonly",
-                        "disabled", "readonly", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
-                    self.__currentMode = "VVI"
-                elif self.__modeList.get() == "AOOR":
-                    self.__hideParameter(
-                        ["readonly", "readonly", "readonly", "disabled", "readonly", "disabled", "disabled", "disabled",
-                        "disabled", "disabled", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled"])
-                    self.__currentMode = "AOOR"
-                elif self.__modeList.get() == "AAIR":
-                    self.__hideParameter(
-                        ["readonly", "readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled",
-                        "readonly", "disabled", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled"])
-                    self.__currentMode = "AAIR"
-                elif self.__modeList.get() == "VVIR":
-                    self.__hideParameter(
-                        ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "readonly",
-                        "disabled", "readonly", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled"]
-                    )
-                    self.__currentMode = "VVIR"
-                elif self.__modeList.get() == "VOOR":
-                    self.__hideParameter(
-                        ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "disabled",
-                        "disabled", "disabled", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled"])
-                    self.__currentMode = "VOOR"
-        ''' 
-        '''
-            def __hideParameter(self, showState):
-                for i in range(len(showState)):
-                    self.__entryArr[i].config(state=showState[i])
-                    if showState[i] == "disabled":
-                        self.__buttonArr[i].grid_remove()
-                        self.__labelArr[i].grid_remove()
-                    elif showState[i] == "readonly":
-                        self.__buttonArr[i].grid()
-                        self.__labelArr[i].grid()
-        '''
     def __saveParameters(self):
         messagebox.showinfo("Success.","Successfully sent parameters!")
         Data_stack = [] #init the
@@ -606,11 +551,6 @@ class ContentWindow(tk.Frame):
         self.__DCM.setUsername(self.username)
         self.__DCM.resetMode()
         self.__DCM.pack()
-
-#    def logout(self):
-#        self.__DCM.pack_forget()
-#        self.__loginWindow.setPaddingVisible()
-#        self.__loginWindow.pack()
 
 # Main script
 if __name__ == "__main__":
