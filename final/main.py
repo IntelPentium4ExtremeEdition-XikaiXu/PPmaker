@@ -266,7 +266,7 @@ class DCMWindow(tk.Frame):
             username (string): stores the username
         """
 
-        title_label = tk.Label(self, text="Quartz Extreme", font=("Arial", 30, "bold"), bg=self.BACKGROUND_COLOR)
+        title_label = tk.Label(self, text="Quartz Extreme ext PPmaker", font=("Arial", 30), bg=self.BACKGROUND_COLOR)
         title_label.pack(pady=20)
 
         self.__topFrame = Frame(self, bg=self.BACKGROUND_COLOR, width=1280, height=30)
@@ -331,8 +331,10 @@ class DCMWindow(tk.Frame):
         while not write:
             if not (sc.getCurrentPort() is None):
                 if not write:
-                    sc.serialWrite(
-                        b'\x16\x22\x00')
+                    sc.serialWrite(b'\x16\x22\00\x3C\x78\x00\x00\xA0\x40\x00\x00\xA0\x40\x02\x02\xFA\x00\xFA\x00\x00\x00\x80\x40\x00\x00\x80\x40\x64\x02\x0A\x10\xCD\xCC\x8C\x3F\x64\x00')
+                    print("x16 sended")
+                    print("extendbit sended")
+
                     temp = sc.serialRead()
                     temp = 0
                     try:
@@ -352,7 +354,7 @@ class DCMWindow(tk.Frame):
                         voltageV.append(0.5 * 3.3)
                         tvlist.append(time.time() - t)
                 else:
-                    sleep(0.5)
+                    sleep(1)
 
                 if len(voltageA) > 500:
                     voltageA.pop(0)
@@ -361,7 +363,7 @@ class DCMWindow(tk.Frame):
                 if len(voltageV) > 600:
                     voltageV.pop(0)
                     tvlist.pop(0)
-                if time.time() - lasttime > 0.25:
+                if time.time() - lasttime > 0.025:
                     lasttime = time.time()
                     a.clear()
                     a.plot(talist, voltageA, color='red')
@@ -523,7 +525,12 @@ class DCMWindow(tk.Frame):
                     alt.writeText(text)
 
         print(arr)
-        val = b'\x16\x00\x22'
+        sc.serialWrite(b'\x16')
+        print("x16 sended")
+        print("extendbit sended")
+        sc.serialWrite(b'\x55')
+        #val = b'\x16'
+        #val = val + b'\x55'
         for item in arr:
             val = val + item
         print(self.__currentPort)

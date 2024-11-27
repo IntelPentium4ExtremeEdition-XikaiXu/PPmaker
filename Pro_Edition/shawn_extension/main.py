@@ -50,8 +50,8 @@ class LoginWindow(tk.Frame):
     DEFAULT_LOGIN_BUTTON_TEXT = "Login"
     DEFAULT_REGISTER_BUTTON_TEXT = "Register User"
     PADDING = 10
-    BACKGROUND_COLOR = "#ADD8E6"
-    FOREGROUND_COLOR = "#C0C0C0"
+    BACKGROUND_COLOR = "#FFFFFF"
+    FOREGROUND_COLOR = "#FFFFFF"
     PASSWORDFILE = "password.json"
 
     # Private Variables
@@ -182,6 +182,39 @@ class DCMWindow(tk.Frame):
     """ Extends tk.Frame
         The DCMWindow is a subclass of tk.Frame that stores all the components of the DCM Window.
     """
+        # Constants
+    PARAMLABELS = ["Lower Rate Limit", "Upper Rate Limit", "Atrial Amplitude", "Ventricular Amplitude",
+                   "Atrial Pulsewidth", "Ventricular Pulsewidth", "Atrial Refractory Period",
+                   "Ventricular Refractory Period", "Atrium Sense", "Ventricle Sense", "MSR", "Recovery Time",
+                   "Reaction Time", "Response Factor", "Activity Threshold", "AV Delay", ""]
+    LRL = [30, 35, 40, 45, 50]
+    URL = []
+    ATRAMP = ["Off"]
+    VENTAMP = ["Off"]
+    ATRWIDTH = []
+    VENTWIDTH = []
+    ATRREFRAC = []
+    VENTREFRAC = []
+    ASENSE = [0]
+    VSENSE = [0]
+    MSR = []
+    RECOVERYTIME = []
+    REACTIONTIME = []
+    RESPONSEFACTOR = []
+    ACTIVITYTHRESHOLD = ["V-Low", "Low", "Med-Low", "Med", "Med-High", "High", "V-High"]
+    AVDELAY = []                           #       #    #            #                 #     #          #                               #                 #
+    #key mappingPROGRAMABLEPARAMETERS = [Ampitute,LRL,Pulsewidth, Threshold , ARP,VRP, URL, MSR, Activity_Threshold,Response_Factor, Reaction_time, Recovery_time]
+    PROGRAMABLEPARAMETERS = [ATRAMP,LRL,  ATRWIDTH, VENTAMP, RESPONSEFACTOR, ATRREFRAC,VENTWIDTH, URL,MSR,ACTIVITYTHRESHOLD,VENTREFRAC, REACTIONTIME,RECOVERYTIME,  AVDELAY, ASENSE, VSENSE, ]
+    PARAMETERFILE = "parameters.json"
+    TYPELIST = ["16", "16", "16", "f", "16", "f", "f", "16", "16", "f", "16", "16", "16", "8", "8", "16"]
+    NUMBEROFPARAMETERS = len(PROGRAMABLEPARAMETERS)
+    MODELABELS = ["AOO", "VOO", "AAI", "VVI", "AOOR", "VOOR", "AAIR", "VVIR"]
+    # The following variable is a placeholder before serial communication is implemented
+    BACKGROUND_COLOR = "#FFFFFF"
+    SERIALCOMMODE = SerialComm().getSerialPorts()
+    ACTIVITYTHRESHOLDDICT = {"V-Low": 1.1, "Low": 1.3, "Med-Low": 1.5, "Med": 1.7, "Med-High": 1.9, "High": 2.1,
+                             "V-High": 2.3}
+    '''
     # Constants
     PARAMLABELS = ["Lower Rate Limit", "Upper Rate Limit", "Atrial Amplitude", "Ventricular Amplitude",
                    "Atrial Pulsewidth", "Ventricular Pulsewidth", "Atrial Refractory Period",
@@ -203,10 +236,12 @@ class DCMWindow(tk.Frame):
     RESPONSEFACTOR = []
     ACTIVITYTHRESHOLD = ["V-Low", "Low", "Med-Low", "Med", "Med-High", "High", "V-High"]
     AVDELAY = []
+
     PROGRAMABLEPARAMETERS = [LRL, URL, ATRAMP, VENTAMP, ATRWIDTH, VENTWIDTH, ATRREFRAC, VENTREFRAC, ASENSE, VSENSE, MSR,
                              RECOVERYTIME, REACTIONTIME, RESPONSEFACTOR, ACTIVITYTHRESHOLD, AVDELAY]
     PARAMETERFILE = "parameters.json"
     TYPELIST = ["8", "8", "f", "f", "8", "8", "16", "16", "f", "f", "8", "8", "8", "8", "f", "16"]
+
     NUMBEROFPARAMETERS = len(PROGRAMABLEPARAMETERS)
     MODELABELS = ["AOO", "VOO", "AAI", "VVI", "AOOR", "VOOR", "AAIR", "VVIR", "DOO", "DOOR"]
     # The following variable is a placeholder before serial communication is implemented
@@ -215,6 +250,7 @@ class DCMWindow(tk.Frame):
     ACTIVITYTHRESHOLDDICT = {"V-Low": 1.1, "Low": 1.3, "Med-Low": 1.5, "Med": 1.7, "Med-High": 1.9, "High": 2.1,
                              "V-High": 2.3}
 
+    '''
     # Private Variables
     __mainWindow = None
     __labelArr = []
