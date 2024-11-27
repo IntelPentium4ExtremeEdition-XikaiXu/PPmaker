@@ -1,86 +1,173 @@
-import time
+import json
+import os
 import serial
-import struct
 
-class SerialConnection:
+class FileIO:
+    """用于存储、写入和读取文件的类
+    """
+    # 变量声明
+    # 常量
+    # 私有变量
+    __fileName = ""
 
-    def __init__(self, com_port, params):
-        self.ser_port = com_port
-        self.ser = None
-        self.connected = False
-        self.status = 0  # 0 = disconnected, 1 = connected
-        self.params = params
+    def __init__(self, fileName):
+        """构造函数
 
-    def check_connection(self):
-        try:
-            # 尝试连接并发送 1 byte 数据 10
-            self.ser = serial.Serial(port=self.ser_port, baudrate=115200, timeout=1)
-            if self.ser.is_open:
-                # 发送一个 1 字节数据 10
-                self.ser.write(b'\x10')  # 发送 1 字节数据 0x10
-                self.connected = True
-                self.status = 1
-                print("\nConnected and sent data: 10")
-            else:
-                self.connected = False
-                self.status = 0
-                print("\nNot Connected")
-        except serial.SerialException as e:
-            self.connected = False
-            self.status = 0
-            print(f"Connection failed: {e}")
+        参数:
+            fileName (string): 要存储的文件名
+        """
+        self.__fileName = fileName
 
-    def get_connection_status(self):
-        return self.status
+    def writeText(self, text):
+        """首先检查文件是否存在，如果不存在则创建一个。
+        将字典写入指定的json文件。
 
-    def _pack_data(self, data):
-        data_binary = b''
-        for p in data:
-            data_binary += struct.pack('<B', p)  # Little-endian format
-        return data_binary
-
-    def receive_data(self):
-        print("Receiving data.")
-        if self.ser and self.ser.is_open:
-            data = self.ser.read(100)
-            print(f"Received data: {data}")
-            return data
+        参数:
+            text (dictionary): 要写入的字典
+        """
+        if os.path.isfile(self.__fileName):
+            with open(self.__fileName, "r") as f:
+                data = self.readText()
+                if not data:
+                    data = text
+                try:
+                    data.update(text)
+                except Exception:
+                    pass
+            with open(self.__fileName, "w") as f:
+                f.write(json.dumps(data))
         else:
-            print("Error: Serial connection not open.")
+            with open(self.__fileName, "w") as f:
+                f.write(json.dumps(text))
+
+    def readText(self):
+        """读取json文件并将数据以字典格式返回
+
+        返回:
+            [dictionary]: 返回字典格式的数据
+        """
+        try:
+            with open(self.__fileName, "r") as f:
+                data = json.load(f)
+            return data
+        except:
             return None
 
-    def close_connection(self):
-        if self.ser and self.ser.is_open:
-            self.ser.close()
-            print("\nConnection closed.")
+    # 获取函数
+    def getFileName(self):
+        """获取当前文件名
 
-    def send_and_wait_for_response(self, data, chunk_size=10, timeout=5):
+        返回:
+            [string]: 返回文件名
         """
-        发送数据并等待串口返回非零数据。
-        
-        :param data: 要发送的数组
-        :param chunk_size: 每次发送的数据块大小
-        :param timeout: 等待串口响应的最大时间（秒）
-        :return: 返回接收到的数据
+        return self.__fileName
+
+    def getlength(self):
+        """获取字典的长度
+
+        返回:
+            [int]: 字典的长度
         """
-        if not self.ser or not self.ser.is_open:
-            print("Error: Serial connection is not open.")
-            return None
+        data = self.readText()
+        return len(data)
 
-        # 将数据切割成块并发送
-        for i in range(0, len(data), chunk_size):
-            chunk = data[i:i+chunk_size]
-            packed_data = self._pack_data(chunk)
-            print(f"Sending chunk: {chunk}")
-            self.ser.write(packed_data)
 
-            # 等待响应
-            start_time = time.time()
-            while time.time() - start_time < timeout:
-                received_data = self.receive_data()
-                if received_data and received_data != b'\x00':  # 如果收到非零数据
-                    print(f"Received valid data: {received_data}")
-                    return received_data
+class SerialComm:
+    __port = None
+    __baudrate = 0
+    __bytesize = 0
+    __parity = serial.PARITY_ODD
+    __stopbits = 0
+    __timeout = 1
+    __xonxoff = 0
+    __rtscts = 0
+    """构造函数
+    """
 
-            print(f"Timeout reached while waiting for response for chunk: {chunk}")
-        return None
+    def __init__(self):
+        super().__init__()
+        self.__baudrate = 115200
+        self.__bytesize = 8
+        self.__parity = serial.PARITY_ODD
+        self.__stopbits = serial.STOPBITS_ONE
+        self.__timeout = 0
+        self.__xonxoff = 0
+        self.__rtscts = 0
+        self.__ser = serial.Serial(self.__port, self.__baudrate, self.__bytesize, self.__parity, self.__stopbits,
+                                   self.__timeout,
+                                   self.__xonxoff, self.__rtscts)
+
+    """ 设置当前用于串口通信的端口
+    """
+
+    def setPort(self, port):
+        if (port[0:3] == "COM"):
+            self.__port = port
+            self.__ser = serial.Serial(self.__port, self.__baudrate, self.__bytesize, self.__parity, self.__stopbits,
+                                       self.__timeout,
+                                       self.__xonxoff, self.__rtscts)
+
+    """ 返回所有可用的串口列表
+    """
+
+    def getSerialPorts(self):
+        ports = []
+        result = []
+        for i in range(16):
+            ports.append('COM' + str(i))
+        for port in ports:
+            try:
+                s = serial.Serial(port)
+                s.close()
+                result.append(port)
+            except (OSError, serial.SerialException):
+                pass
+        return result
+
+    """ 尝试向串口通信端口写入数据
+    """
+
+    def serialWrite(self, data):
+        try:
+            try:
+                if (type(data) == str):
+                    self.__ser.write(data.encode())  # 如果数据是字符串，则编码为字节并写入
+                else:
+                    self.__ser.write(data)  # 如果数据是字节，则直接写入
+            except Exception:
+                self.__ser.close()  # 出现异常时关闭串口连接
+        except Exception:
+            pass
+
+    """ 返回给定字节串的校验位
+    """
+
+    def getParityBit(self, data):
+        val = []
+        if (type(data) == bytes):
+            val = "{:0x0A}".format(int(data.hex(), 16))  # 将字节数据转换为十六进制字符串
+        else:
+            return b'\x00'  # 如果数据不是字节类型，返回默认的校验位
+        sum = 0
+        for item in val:
+            if (item == '1'):
+                sum += 1  # 统计字节中 '1' 的个数
+        if (sum % 2 == 0):
+            return b'\x01'  # 如果 '1' 的个数是偶数，返回校验位 1
+        return b'\x00'  # 如果 '1' 的个数是奇数，返回校验位 0
+
+    """ 返回当前存储的串口端口值
+    """
+
+    def getCurrentPort(self):
+        return self.__port
+
+    """ 尝试从串口通信端口读取数据
+    """
+
+    def serialRead(self):
+        try:
+            val = self.__ser.read(16)  # 读取16个字节的数据
+            return val
+        except Exception:
+            return None  # 如果读取失败，返回 None
