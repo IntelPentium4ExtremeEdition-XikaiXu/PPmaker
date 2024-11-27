@@ -730,7 +730,7 @@ class ContentWindow(tk.Frame):
         parent.title("DCM")
         parent.geometry("1200x700")
         parent.resizable(True, True)
-        parent.config(bg="LightBlue")
+        parent.config(bg="White")
         self.__loginWindow = LoginWindow(self)
         self.__DCM = DCMWindow(self, self.username)
         self.__loginWindow.pack()
