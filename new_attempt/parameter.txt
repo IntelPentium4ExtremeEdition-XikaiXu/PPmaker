@@ -1,0 +1,19 @@
+Parameter Name	                Size (Bytes)	Data Type	        Description
+Header (0x16, 0x55)	            2	B            uint8 (2 values)	Packet start identifiers
+Mode	                        1	B            uint8	            Pacing mode identifier (1-8)
+Lower Rate Limit	            1	B            uint8	            Lower pacing rate (30-175 bpm)
+Upper Rate Limit	            1	B            uint8	            Upper pacing rate (50-175 bpm)
+Maximum Sensor Rate	            1	B            uint8	            Max sensor rate (50-175 bpm)
+Atrial Amplitude	            4	f            float	            Atrial stimulation amplitude (0.1-5.0 V)
+Ventricular Amplitude	        4	f            float	            Ventricular stimulation amplitude (0.1-5.0 V)
+Atrial Pulse Width	            1	B            uint8	            Atrial pulse width (1-30 ms)
+Ventricular Pulse Width	        1	B            uint8	            Ventricular pulse width (1-30 ms)
+Atrial Sensitivity	            4	f            float	            Sensitivity of atrial sensing (0.0-5.0 V)
+Ventricular Sensitivity	        4	f            float	            Sensitivity of ventricular sensing (0.0-5.0 V)
+ARP 	                        2	H            uint16	            Duration of ARP (150-500 ms)
+VRP 	                        2	H            uint16	            Duration of VRP (150-500 ms)
+PVARP 	                        2	H            uint16	            Duration of PVARP (150-500 ms)
+Activity Threshold	            4	f            float	            Activity threshold for rate-adaptive pacing
+Reaction Time	                1	B            uint8	            Time to increase pacing rate (10-50 sec)
+Response Factor	                1	B            uint8	            Rate of response to sensor input (1-16)
+Recovery Time	                2	f            uint16	            Time to return to base rate (2-16 min)

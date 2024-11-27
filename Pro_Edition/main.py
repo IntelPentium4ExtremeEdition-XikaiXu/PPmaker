@@ -108,7 +108,7 @@ class LoginWindow(tk.Frame):
     def registerUser(self):
         """注册新用户"""
         alt = FileIO(self.PASSWORDFILE)
-        d = alt.getlength()  # 获取当前用户数
+        d = alt.get_length()  # 获取当前用户数
         f = alt.readText()  # 读取文件中的用户数据
         self.getText()  # 获取输入的用户名和密码
         text = {self.__username: self.__password}  # 创建包含新用户信息的字典
@@ -306,16 +306,18 @@ class DCMWindow(tk.Frame):
         voltageA = []  # 存储电压A数据
         lasttime = t  # 最后更新时间
 
-        write = False  # 初始为未写入状态
+        write = True  # 初始为未写入状态
         print(write)
-
+        print(sc.getCurrentPort())
+        print(sc.serialWrite(b'\x16\x00\x22'))
         while not write:
             # 判断串口是否打开
             if not (sc.getCurrentPort() is None):
                 if not write:
                     # 发送数据到串口
                     sc.serialWrite(b'\x16\x00\x22')
-                    temp = sc.serialRead()  # 读取串口数据
+                    print(sc.serialWrite(b'\x16\x00\x22'))
+                    temp = sc.serial_read()  # 读取串口数据
                     temp = 0  # 临时值
                     try:
                         # 解包读取第一个值
@@ -364,93 +366,67 @@ class DCMWindow(tk.Frame):
 
 
     def __saveParameters(self):
+        global write
+
         """保存 PROGRAMABLEPARAMETERS 到外部 JSON 文件并发送参数"""
         try:
-            # 构造要保存的参数数据
             parameters = {}
-            arr = []  # 将存储转换后的字节数据
+            arr = []
 
-            for i, param in enumerate(self.PROGRAMABLEPARAMETERS):
-                if i < len(self.__entryArr):
-                    # 检查输入框状态，获取值
-                    if self.__entryArr[i]["state"] == "normal":
-                        try:
-                            # 转换为整数或浮点数
-                            if isinstance(param, list) and self.__entryArr[i].get() in param:
-                                value = self.__entryArr[i].get()
-                            elif self.__entryArr[i].get().strip().isdigit():
-                                value = int(self.__entryArr[i].get())
-                            else:
-                                value = float(self.__entryArr[i].get())
-                            parameters[self.PARAMLABELS[i]] = value
-                        except ValueError:
-                            parameters[self.PARAMLABELS[i]] = self.__entryArr[i].get()
-                    else:
-                        parameters[self.PARAMLABELS[i]] = ""
+            if self.__entryArr[10]["state"] == "readonly":
+                if (self.__entryArr[10].get() < self.__entryArr[0].get()) or (
+                    self.__entryArr[10].get() > self.__entryArr[1].get()):
+                    messagebox.showinfo("Error: Invalid inputs",
+                                        "The Maximum Sensing Rate must be between URL and LRL.")
+                    self.__entryArr[10].delete(0, tk.END)
+                    return
 
-            # 保存参数到 JSON 文件
-            file_name = f"{self.__username}_parameters.json"
-            with open(file_name, 'w') as json_file:
-                json.dump(parameters, json_file, indent=4)
+            # 保存参数到文件
+            alt = FileIO(self.__username + self.__currentMode + self.PARAMETERFILE)
+            alt.writeText({"Mode": self.__currentMode})
 
-            # 显示保存成功的消息
-            messagebox.showinfo("Success", f"Parameters saved successfully to {file_name}")
+            for i in range(self.NUMBEROFPARAMETERS):
+                if self.__entryArr[i]["state"] == "readonly":
+                    alt.writeText({self.PARAMLABELS[i], self.__entryArr[i].get()})
 
-            # 转换为字节数组以发送
+
+            # 构建字节数组
             arr.append((self.MODELABELS.index(self.__currentMode)).to_bytes(1, byteorder='little'))
-            for i, param in enumerate(self.PROGRAMABLEPARAMETERS):
+            for i in range(self.NUMBEROFPARAMETERS):
                 try:
                     if self.TYPELIST[i] == "8":
-                        arr.append(int(self.__entryArr[i].get()).to_bytes(1, byteorder='little'))  # 8位整型
+                        arr.append(int(self.__entryArr[i].get()).to_bytes(1, byteorder='little'))
                     elif self.TYPELIST[i] == "f":
-                        temparr = bytearray(struct.pack('f', float(self.__entryArr[i].get())))  # 浮点型
-                        for item in temparr:
-                            arr.append(item.to_bytes(1, byteorder='little'))
+                        temparr = bytearray(struct.pack('f', float(self.__entryArr[i].get())))
+                        arr.extend(temparr)
                     else:
-                        val = int(self.__entryArr[i].get()).to_bytes(2, byteorder='little')  # 2字节整型
-                        arr.append(val)
+                        arr.append(int(self.__entryArr[i].get()).to_bytes(2, byteorder='little'))
                 except ValueError:
-                    # 如果输入无效，设置默认值
-                    if str(self.__entryArr[i].get()) in self.ACTIVITYTHRESHOLD:
-                        val = self.ACTIVITYTHRESHOLDDICT[str(self.__entryArr[i].get())]
-                        temparr = bytearray(struct.pack('f', val))  # 使用阈值填充
-                        for item in temparr:
-                            arr.append(item.to_bytes(1, byteorder='little'))
-                    else:
-                        if self.TYPELIST[i] == "8":
-                            arr.append(b'\x00')  # 默认值为0
-                        elif self.TYPELIST[i] == "f":
-                            arr.append(b'\x00\x00\x00\x00')
-                        else:
-                            arr.append(b'\x00\x00')
+                    default_val = b'\x00\x00' if self.TYPELIST[i] == "16" else b'\x00'
+                    arr.extend(default_val)
 
-            # 打印转换后的字节数组
-            print(arr)
-            val = b'\x16\x00\x55'
-            for item in arr:
-                val += item
+            # 设置 write = True
+                write = True  # 所有验证通过后设置 write 为 True
 
-            # 创建线程发送串口数据
+            # 发送串口数据
+            val = b'\x16\00\x55' + b''.join(arr)
             t1_sc = threading.Thread(target=self.serialCommWrite, args=(val,))
-            t1_sc.daemon = True  # 设置为守护线程
             t1_sc.start()
 
-        except ValueError as e:
-            messagebox.showerror("Input Error", f"Invalid input: {e}")
+            # 显示成功消息
+            messagebox.showinfo("Success", "Parameters sent and saved successfully!")
+
         except Exception as e:
+            write = False  # 出现异常时将 write 设置为 False
             messagebox.showerror("Error", f"An unexpected error occurred: {e}")
 
-        def serialCommWrite(self, val):
-            """ 打开串口并向串口写入数据
 
-            Args:
-                val (bytes): 需要写入的字节数据
-            """
-            global write
-            print(type(val))
-            sc.serialWrite(val)  # 通过串口发送数据
-            print(val)
-            write = False  # 写入完成后将标志设为False
+    def serialCommWrite(self, val):
+        global write
+        print(type(val))
+        sc.serialWrite(val)  # 通过串口发送数据
+        print(val)
+        write = False  # 写入完成后将标志设为False
 
     def resetMode(self):
         """ 将状态重置为 VOO 模式
@@ -577,7 +553,7 @@ class ContentWindow(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.__parent = parent
         parent.title("PPMaker Extreme Edition")  # 设置窗口标题
-        parent.geometry("400x300")  # 设置窗口大小
+        parent.geometry("700x850")  # 设置窗口大小
         parent.resizable(True, True)  # 允许窗口调整大小
 
         self.__loginWindow = LoginWindow(self)  # 创建登录窗口
