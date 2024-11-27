@@ -3,7 +3,7 @@ from tkinter import messagebox
 import bcrypt
 import json
 import os
-from system_transport import SerialConnection
+from PPmaker.Pro_Edition.system_transport import SerialConnection
 # File for storing user credentials
 user_file = "users.json"
 

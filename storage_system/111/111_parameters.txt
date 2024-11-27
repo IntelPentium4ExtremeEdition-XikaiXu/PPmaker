@@ -1,9 +1,0 @@
-password: $2b$12$3P5nhURf5hsYCG5ckHkUXOtiNrv8Ghg0MOFD/6ZSDPJrr4FPUaGjq
-aoo: 0
-voo: 0
-aooR: 0
-vooR: 0
-aii: 0
-vii: 0
-aiiR: 0
-viiR: 0

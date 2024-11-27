@@ -3,24 +3,17 @@ from tkinter import messagebox
 import bcrypt
 import json
 import os
+import matplotlib
 #from system_transport import SerialConnection
 from LOL import EgramPlotter
+from PIL import Image
 
-
-#def show_egram_graph():
-#   messagebox.showinfo("Electrogram", "Displaying electrogram...")
-
-
-
-# File for storing user credentials
 base_folder = "storage_system"
 user_file = "users.json"
 
 # File for storing parameters
 os.makedirs(base_folder, exist_ok=True)
 
-# Invite code for registration
-invite_code = "114514"
 
 # PARAMLABELS for all modes
 PARAMLABELS = [
@@ -87,7 +80,7 @@ def open_register_window():
         messagebox.showinfo("success", "signed")
         register_window.destroy()
 
-    tk.Button(register_window, text="注册", command=register).pack(pady=10)
+    tk.Button(register_window, text="signed", command=register).pack(pady=10)
 
 
 # Login functionality
@@ -105,17 +98,10 @@ def login():
 def open_main_window():
     main_window = tk.Tk()
     main_window.title("DCM Main Interface")
-    main_window.geometry("800x480")
+    main_window.geometry("540x480")
 
     menu_bar = tk.Menu(main_window)
 
-    # Add an image
-    image = Image.open("example.jpg").resize((400, 300))  # Resize to 400x300
-    photo = ImageTk.PhotoImage(image)
-    label = tk.Label(main_window, image=photo)
-    label.image = image  # Keep a reference to avoid garbage collection
-    label.pack(pady=20)
-    
     operation_menu = tk.Menu(menu_bar, tearoff=0)
     operation_menu.add_command(label="Device Status", command=show_device_status)
     operation_menu.add_command(label="Refresh Connection", command=refresh_connection_status)
@@ -195,17 +181,35 @@ def save_parameters_to_file(mode, data):
     messagebox.showinfo("Success", f"Parameters for {mode} saved successfully!")
 
 # Input validation
-def validate_input(LRL, URL, atrial_amplitude, ventricular_amplitude):
-    if not (30 <= LRL <= 150):
-        raise ValueError("Lower Rate Limit must be between 30 and 150.")
-    if not (50 <= URL <= 180):
-        raise ValueError("Upper Rate Limit must be between 50 and 180.")
-    if not (0.5 <= atrial_amplitude <= 5.0):
-        raise ValueError("Atrial Amplitude must be between 0.5V and 5.0V.")
-    if not (0.5 <= ventricular_amplitude <= 5.0):
-        raise ValueError("Ventricular Amplitude must be between 0.5V and 5.0V.")
-    # Add more validation logic as needed for other parameters
+def validate_input(data):
+    validation_rules = {
+        "Lower Rate Limit": (30, 150),  # 下限速率
+        "Upper Rate Limit": (50, 180),  # 上限速率
+        "Atrial Amplitude": (0.5, 5.0),  # 心房振幅
+        "Ventricular Amplitude": (0.5, 5.0),  # 心室振幅
+        "Atrial Pulsewidth": (1, 2),  # 心房脉冲宽度
+        "Ventricular Pulsewidth": (1, 2),  # 心室脉冲宽度
+        "Atrial Refractory Period": (1, 2),  # 心房不应期
+        "Ventricular Refractory Period": (1, 2),  # 心室不应期
+        "Atrium Sense": (1, 2),  # 心房感应
+        "Ventricle Sense": (1, 2),  # 心室感应
+        "MSR": (1, 2),  # 最大感应速率
+        "Recovery Time": (1, 2),  # 恢复时间
+        "Reaction Time": (1, 2),  # 反应时间
+        "Response Factor": (1, 2),  # 响应因子
+        "Activity Threshold": (1, 2),  # 活动阈值
+        "AV Delay": (1, 2),  # 房室延迟
+        "Additional Parameter": (1, 2),  # 其他参数
+    }
+    for param, value in data.items():
+        if param in validation_rules:
+            min_val, max_val = validation_rules[param]
+            if not (min_val <= value <= max_val):
+                raise ValueError(f"{param} must between {min_val} and {max_val}.")
+        else:
+            raise ValueError(f"wrong：{param}")
     return True
+
 
 # Loading and saving parameters from/to a file
 def load_parameters():
@@ -219,14 +223,14 @@ def save_parameters(parameters):
         json.dump(parameters, file, indent=4)
 
 def show_egram_graph():
-    plotter = EgramPlotter(root)  # 使用 root 窗口作为父窗口
-    plotter.start()  # 开始加载 CSV 和绘图流程
+    plotter = EgramPlotter(root)
+    plotter.start() 
 
 
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("User Login")
-    root.geometry("300x200")
+    root.geometry("300x280")
     
     # 定义其他 UI 组件
     tk.Label(root, text="Username:").pack(pady=10)
@@ -238,10 +242,6 @@ if __name__ == "__main__":
     tk.Button(root, text="Login", command=login).pack(pady=10)
     tk.Button(root, text="Register", command=open_register_window).pack(pady=5)
     
-    # 定义 egram_button
-    #egram_button = tk.Button(root, text="Show Electrogram", command=show_egram_graph)
-    #egram_button.pack(pady=20)
-
     root.mainloop()
 
 
