@@ -10,27 +10,19 @@ from time import sleep
 import time
 import threading
 
-# Global variables
-# sc is the static serial communication variable
 sc = SerialComm()
-# write is used to detect whether the serial port is reading or writing so it does not interfere with each mode
 write = False
 
-#Figures for the ECG
 f = Figure(figsize=(8, 6), dpi=160)
 a = f.add_subplot(111, ylim=(0, 1))
 
-
 class Run:
     def __init__(self):
-        """Object Constructor
-        """
         root = tk.Tk()
         # The login window object is created
         cw = ContentWindow(root)
         cw.pack()
         cw.mainloop()
-
 
 class LoginWindow(tk.Frame):
     # Variable Declaration
@@ -158,10 +150,15 @@ class DCMWindow(tk.Frame):
         The DCMWindow is a subclass of tk.Frame that stores all the components of the DCM Window.
     """
     # Constants
-    PARAMLABELS = ["Lower Rate Limit", "Upper Rate Limit", "Atrial Amplitude", "Ventricular Amplitude",
-                   "Atrial Pulsewidth", "Ventricular Pulsewidth", "Atrial Refractory Period",
-                   "Ventricular Refractory Period", "Atrium Sense", "Ventricle Sense", "MSR", "Recovery Time",
-                   "Reaction Time", "Response Factor", "Activity Threshold", "AV Delay", ""]
+    #PARAMLABELS = ["Lower Rate Limit", "Upper Rate Limit", "Atrial Amplitude", "Ventricular Amplitude",
+     #              "Atrial Pulsewidth", "Ventricular Pulsewidth", "Atrial Refractory Period",
+      #             "Ventricular Refractory Period", "Atrium Sense", "Ventricle Sense", "MSR", "Recovery Time",
+       #            "Reaction Time", "Response Factor", "Activity Threshold", "AV Delay", ""]
+    
+    PARAMLABELS = ["AMP", "LRL", "PulseWidth", "thresold",
+                   "ARP", "VRP", "Upper_rate",
+                   "MSR", "Action_threshood", "response_factor", "reaction_time", "recovery_time"]
+    
     LRL = [30, 35, 40, 45, 50]
     URL = []
     ATRAMP = ["Off"]
@@ -181,9 +178,14 @@ class DCMWindow(tk.Frame):
     PROGRAMABLEPARAMETERS = [LRL, URL, ATRAMP, VENTAMP, ATRWIDTH, VENTWIDTH, ATRREFRAC, VENTREFRAC, ASENSE, VSENSE, MSR,
                              RECOVERYTIME, REACTIONTIME, RESPONSEFACTOR, ACTIVITYTHRESHOLD, AVDELAY]
     PARAMETERFILE = "parameters.json"
-    TYPELIST = ["8", "8", "f", "f", "8", "8", "16", "16", "f", "f", "8", "8", "8", "8", "f", "16"]
+
+    TYPELIST = ["1", "1", "1", "1", "2", "2", "2", "2", "1", "1", "1", "1", "8", "8", "f", "16"]
+
+    #TYPELIST = ["8", "8", "f", "f", "8", "8", "16", "16", "f", "f", "8", "8", "8", "8", "f", "16"]
+    
     NUMBEROFPARAMETERS = len(PROGRAMABLEPARAMETERS)
-    MODELABELS = ["AOO", "VOO", "AAI", "VVI", "AOOR", "VOOR", "AAIR", "VVIR", "DOO", "DOOR"]
+
+    MODELABELS = ["AOO", "VOO", "AAI", "VVI", "AOOR", "VOOR", "AAIR", "VVIR"]
     # The following variable is a placeholder before serial communication is implemented
     BACKGROUND_COLOR = "#ADD8E6"
     SERIALCOMMODE = SerialComm().getSerialPorts()
@@ -210,12 +212,6 @@ class DCMWindow(tk.Frame):
     __graphWindowButton = None
 
     def __init__(self, mainWindow, username):
-        """Object Constructor
-
-        Args:
-            mainWindow (ContentWindow): the higher frame that stores the DCMWindow
-            username (string): stores the username
-        """
         tk.Frame.__init__(self, mainWindow, bg=self.BACKGROUND_COLOR, width=1280, height=600)
         self.__username = username
         self.__initalizeConstants()
@@ -233,51 +229,52 @@ class DCMWindow(tk.Frame):
         self.toolbar = NavigationToolbar2Tk(self.canvas, self)
         self.toolbar.update()
         self.canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        self.__modeSelect()
+        #self.__modeSelect()
 
     def __initalizeTopFrame(self, username):
-        """Initializes top frame of the DCM Window
+        # 创建标题标签，显示项目名称 "Pacemaker Project"
+        title_label = tk.Label(self, text="Pacemaker Project", bg=self.BACKGROUND_COLOR)
+        title_label.pack(pady=20)  # 将标题标签放入窗口并设置上下间距
 
-        Args:
-            username (string): stores the username
-        """
-
-        title_label = tk.Label(self, text="Pacemaker Project", font=("Arial", 24, "bold"), bg=self.BACKGROUND_COLOR)
-        title_label.pack(pady=20)
-
+        # 创建一个顶部框架，设置背景颜色和大小
         self.__topFrame = Frame(self, bg=self.BACKGROUND_COLOR, width=1280, height=30)
+        
+        # 创建一个用户名标签，显示当前用户的用户名
         self.__usernameLabel = Label(self.__topFrame, text="User: " + username, bg=self.BACKGROUND_COLOR)
-        self.__usernameLabel.grid(row=0, column=0, padx=110)
+        self.__usernameLabel.grid(row=0, column=0, padx=110)  # 设置用户名标签的位置，添加水平间距
+
+        # 创建一个串口模式选择框，用户可以选择不同的串口通信模式
         self.__comMode = ttk.Combobox(self.__topFrame, values=self.SERIALCOMMODE, state="readonly")
-        self.__comMode.grid(row=0, column=1, padx=5)
+        self.__comMode.grid(row=0, column=1, padx=5)  # 设置选择框的位置，并添加水平间距
+
+        # 创建一个连接按钮，点击后调用 __checkPort 方法来检查串口连接
         self.__comButton = Button(self.__topFrame, text="Connect", bg="lightgreen", command=self.__checkPort, relief="flat",
-                                  padx=20)
-        self.__comButton.grid(row=0, column=2, padx=5)
-        self.__logoutButton = Button(self.__topFrame, text="Logout",bg="red", command=self.logout, relief="flat", padx=20)
-        self.__logoutButton.grid(row=0, column=3, padx=230)
+                                padx=20)
+        self.__comButton.grid(row=0, column=2, padx=5)  # 设置连接按钮的位置，并添加水平间距
+
+        # 创建一个登出按钮，点击后调用 logout 方法登出
+#        self.__logoutButton = Button(self.__topFrame, text="Logout", bg="red", command=self.logout, relief="flat", padx=20)
+#        self.__logoutButton.grid(row=0, column=3, padx=230)  # 设置登出按钮的位置，添加较大的水平间距
+
+        # 将顶部框架添加到主窗口中
         self.__topFrame.pack()
 
+
     def __initalizeRightFrame(self):
-        """Initializes right frame of the DCM Window
-        """
         self.__rightFrame = Frame(self.__centerFrame, bg=self.BACKGROUND_COLOR, width=640, height=550)
         self.__rightFrame.grid(row=0, column=1)
         topRight = Frame(self.__rightFrame, bg=self.BACKGROUND_COLOR, width=640, height=275)
         bottomRight = Frame(self.__rightFrame, bg=self.BACKGROUND_COLOR, width=640, height=275)
         topRight.pack()
         bottomRight.pack()
-        self.__saveButton = Button(topRight, text="Select Mode", command=self.__modeSelect, relief="flat", padx=20)
-        self.__saveButton.grid(row=0, column=1, padx=20, pady=20)
+        #self.__saveButton = Button(topRight, text="Select Mode", command=self.__modeSelect, relief="flat", padx=20)
+        #self.__saveButton.grid(row=0, column=1, padx=20, pady=20)
         self.__modeList = ttk.Combobox(topRight, values=self.MODELABELS, state="readonly")
         self.__modeList.grid(row=0, column=0, padx=20, pady=20)
         self.__modeList.current(0)
         self.__initalizeParameterList(bottomRight)
 
-
-
     def __initalizeBottomFrame(self):
-        """Initializes bottom frame of the DCM Window
-        """
         self.__bottomFrame = Frame(self, bg=self.BACKGROUND_COLOR, width=1280, height=10)
         self.__bottomFrame.pack()
         self.__buttonSend = Button(self.__bottomFrame, text="Send", command=self.__saveParameters, relief="flat",
@@ -288,14 +285,10 @@ class DCMWindow(tk.Frame):
         self.__graphWindowButton.grid(row=0, column=3, padx=20, pady=5)
 
     def __graphButtonClicked(self):
-        """ Function to detect when the plot data button is pressed
-        """
         t1_gw = threading.Thread(target=self.__displayGraph)
         t1_gw.start()
 
     def __displayGraph(self):
-        """ Threaded function to display the ECG graph on the DCM
-        """
         global write
         t = time.time()
         tvlist = []
@@ -303,7 +296,6 @@ class DCMWindow(tk.Frame):
         voltageV = []
         voltageA = []
         lasttime = t
-
         write = False
         print(write)
         while not write:
@@ -313,7 +305,6 @@ class DCMWindow(tk.Frame):
                         b'\x10\x22\00\x3C\x78\x00\x00\xA0\x40\x00\x00\xA0\x40\x02\x02\xFA\x00\xFA\x00\x00\x00\x80\x40'
                         b'\x00\x00\x80\x40\x64\x02\x0A\x10\xCD\xCC\x8C\x3F\x64\x00')
                     temp = sc.serialRead()
-
                     try:
                         val, = struct.unpack('d', temp[0:8])
                         if (val > 0.4) and (val < 3.5):
@@ -347,84 +338,64 @@ class DCMWindow(tk.Frame):
                     a.plot(tvlist, voltageV, color='green')
                     self.canvas.draw()
 
-    def __modeSelect(self):
-        if (self.__modeList.get() == "AOO" ):
-            self.__hideParameter(
-                ["readonly", "readonly", "readonly", "disabled", "readonly", "disabled", "disabled", "disabled",
-                 "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
-            self.__currentMode = "AOO"
-        elif self.__modeList.get() == "AAI":
-            self.__hideParameter(
-                ["readonly", "readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled",
-                 "readonly", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
-            self.__currentMode = "AAI"
-        elif self.__modeList.get() == "VOO":
-            self.__hideParameter(
-                ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "disabled",
-                 "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
-            self.__currentMode = "VOO"
-        elif self.__modeList.get() == "VVI":
-            self.__hideParameter(
-                ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "readonly",
-                 "disabled", "readonly", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
-            self.__currentMode = "VVI"
-        elif self.__modeList.get() == "AOOR":
-            self.__hideParameter(
-                ["readonly", "readonly", "readonly", "disabled", "readonly", "disabled", "disabled", "disabled",
-                 "disabled", "disabled", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled"])
-            self.__currentMode = "AOOR"
-        elif self.__modeList.get() == "AAIR":
-            self.__hideParameter(
-                ["readonly", "readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled",
-                 "readonly", "disabled", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled"])
-            self.__currentMode = "AAIR"
-        elif self.__modeList.get() == "VVIR":
-            self.__hideParameter(
-                ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "readonly",
-                 "disabled", "readonly", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled"]
-            )
-            self.__currentMode = "VVIR"
-        elif self.__modeList.get() == "VOOR":
-            self.__hideParameter(
-                ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "disabled",
-                 "disabled", "disabled", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled"])
-            self.__currentMode = "VOOR"
-        elif self.__modeList.get() == "DOO":
-            self.__hideParameter(
-                ["readonly", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled", "disabled",
-                 "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "readonly"])
-            self.__currentMode = "DOO"
-        elif self.__modeList.get() == "DOOR":
-            self.__hideParameter(
-                ["readonly", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled", "disabled",
-                 "disabled", "disabled", "readonly", "readonly", "readonly", "readonly", "readonly", "readonly"])
-            self.__currentMode = "DOOR"
-
-    def __hideParameter(self, showState):
-        """Changes that status of the drop-down selector for each parameter
-
-        Args:
-            showState (array): array of values setting the buttons active or inactive eg. [“readonly”]
-        """
-
-        for i in range(len(showState)):
-
-            self.__entryArr[i].config(state=showState[i])
-
-            # Hide or show buttons based on the state
-
-            if showState[i] == "disabled":
-                self.__buttonArr[i].grid_remove()
-                self.__labelArr[i].grid_remove()
-            elif showState[i] == "readonly":
-                self.__buttonArr[i].grid()
-                self.__labelArr[i].grid()
+        '''
+            def __modeSelect(self):
+                if (self.__modeList.get() == "AOO" ):
+                    self.__hideParameter(
+                        ["readonly", "readonly", "readonly", "disabled", "readonly", "disabled", "disabled", "disabled",
+                        "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
+                    self.__currentMode = "AOO"
+                elif self.__modeList.get() == "AAI":
+                    self.__hideParameter(
+                        ["readonly", "readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled",
+                        "readonly", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
+                    self.__currentMode = "AAI"
+                elif self.__modeList.get() == "VOO":
+                    self.__hideParameter(
+                        ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "disabled",
+                        "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
+                    self.__currentMode = "VOO"
+                elif self.__modeList.get() == "VVI":
+                    self.__hideParameter(
+                        ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "readonly",
+                        "disabled", "readonly", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
+                    self.__currentMode = "VVI"
+                elif self.__modeList.get() == "AOOR":
+                    self.__hideParameter(
+                        ["readonly", "readonly", "readonly", "disabled", "readonly", "disabled", "disabled", "disabled",
+                        "disabled", "disabled", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled"])
+                    self.__currentMode = "AOOR"
+                elif self.__modeList.get() == "AAIR":
+                    self.__hideParameter(
+                        ["readonly", "readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled",
+                        "readonly", "disabled", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled"])
+                    self.__currentMode = "AAIR"
+                elif self.__modeList.get() == "VVIR":
+                    self.__hideParameter(
+                        ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "readonly",
+                        "disabled", "readonly", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled"]
+                    )
+                    self.__currentMode = "VVIR"
+                elif self.__modeList.get() == "VOOR":
+                    self.__hideParameter(
+                        ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "disabled",
+                        "disabled", "disabled", "readonly", "readonly", "readonly", "readonly", "readonly", "disabled"])
+                    self.__currentMode = "VOOR"
+        ''' 
+        '''
+            def __hideParameter(self, showState):
+                for i in range(len(showState)):
+                    self.__entryArr[i].config(state=showState[i])
+                    if showState[i] == "disabled":
+                        self.__buttonArr[i].grid_remove()
+                        self.__labelArr[i].grid_remove()
+                    elif showState[i] == "readonly":
+                        self.__buttonArr[i].grid()
+                        self.__labelArr[i].grid()
+        '''
     def __saveParameters(self):
-        """Exports the sent parameters to an external json file
-        """
-        messagebox.showinfo("Success.",
-                            "Successfully sent parameters!")
-        arr = []
+        messagebox.showinfo("Success.","Successfully sent parameters!")
+        Data_stack = [] #init the
         print(self.__entryArr[10]["state"])
         if (self.__entryArr[0].get()) > (self.__entryArr[1].get()):
             print(self.__entryArr[0].get())
@@ -471,19 +442,19 @@ class DCMWindow(tk.Frame):
             print(self.__entryArr[0].get())
             print(self.__entryArr[10].get())
             print(self.__entryArr[1].get())
-            arr.append((self.MODELABELS.index(self.__currentMode)).to_bytes(1, byteorder='little'))
+            Data_stack.append((self.MODELABELS.index(self.__currentMode)).to_bytes(1, byteorder='little')) #mod selection 
         for i in range(self.NUMBEROFPARAMETERS):
             try:
-                if self.TYPELIST[i] == "8":
-                    arr.append(int(self.__entryArr[i].get()).to_bytes(1, byteorder='little'))
+                if self.TYPELIST[i] == "1": #sram detection
+                    Data_stack.append(int(self.__entryArr[i].get()).to_bytes(1, byteorder='little'))
                 elif self.TYPELIST[i] == "f":
                     temparr = (bytearray(struct.pack('f', float(self.__entryArr[i].get()))))
                     for item in temparr:
                         val = int(item)
-                        arr.append(val.to_bytes(1, byteorder='little'))
+                        Data_stack.append(val.to_bytes(1, byteorder='little'))
                 else:
                     val = int(self.__entryArr[i].get()).to_bytes(2, byteorder='little')
-                    arr.append(val)
+                    Data_stack.append(val)
 
             except ValueError:
                 if str(self.__entryArr[i].get()) in self.ACTIVITYTHRESHOLD:
@@ -491,27 +462,27 @@ class DCMWindow(tk.Frame):
                     temparr = bytearray(struct.pack('f', val))
                     for item in temparr:
                         val = int(item)
-                        arr.append(val.to_bytes(1, byteorder='little'))
+                        Data_stack.append(val.to_bytes(1, byteorder='little'))
                 else:
-                    if self.TYPELIST[i] == "8":
-                        arr.append(b'\x00')
+                    if self.TYPELIST[i] == "1": #register
+                        Data_stack.append(b'\x00')
                     elif self.TYPELIST[i] == "f":
-                        arr.append(b'\x00')
-                        arr.append(b'\x00')
-                        arr.append(b'\x00')
-                        arr.append(b'\x00')
+                        Data_stack.append(b'\x00')
+                        Data_stack.append(b'\x00')
+                        Data_stack.append(b'\x00')
+                        Data_stack.append(b'\x00')
                     else:
-                        arr.append(b'\x00')
-                        arr.append(b'\x00')
+                        Data_stack.append(b'\x00')
+                        Data_stack.append(b'\x00')
 
                 if self.__entryArr[i]["state"] == "readonly":
                     text = {self.PARAMLABELS[i]: self.__entryArr[i].get()}
                     alt.writeText(text)
 
-        print(arr)
+        print(Data_stack)
 
         val = b'\x16\x55'
-        for item in arr:
+        for item in Data_stack:
             val = val + item
         print(self.__currentPort)
         t1_sc = threading.Thread(target=self.serialCommWrite, args=(val,))
@@ -525,7 +496,6 @@ class DCMWindow(tk.Frame):
         write = False
 
     def resetMode(self):
-
         alt = FileIO("Usernamemode")
         data = alt.readText()
         if not (data):
@@ -533,14 +503,9 @@ class DCMWindow(tk.Frame):
             data = ""
         if (len(data) == 0):
             self.__modeList.set("VOO")
-            self.__hideParameter(
-                ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "disabled",
-                 "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
+
         elif self.__username not in data:
             self.__modeList.set("VOO")
-            self.__hideParameter(
-                ["readonly", "readonly", "disabled", "readonly", "disabled", "readonly", "disabled", "disabled",
-                 "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled", "disabled"])
             for item in self.__entryArr:
                 item.set("")
         else:
@@ -557,8 +522,7 @@ class DCMWindow(tk.Frame):
                     self.__entryArr[i].set(list(f.values())[i])
 
     def __checkPort(self):
-        messagebox.showinfo("Success:Valid Connection",
-                            "Connected!")
+        messagebox.showinfo("Success:Valid Connection","Connected!")
         self.__currentPort = self.__comMode.get()
         sc.setPort(self.__currentPort)
         t2_sc = threading.Thread(target=self.__runPort)
@@ -576,16 +540,16 @@ class DCMWindow(tk.Frame):
         self.__username = username
 
     def __initalizeParameterList(self, higherFrame):
+        # for i in range(0, self.NUMBEROFPARAMETERS, 4):
         for i in range(0, self.NUMBEROFPARAMETERS, 4):
             for j in range(4):
-                label = Label(higherFrame, text=self.PARAMLABELS[i + j], bg=self.BACKGROUND_COLOR)
+                label = Label(higherFrame, text=self.PARAMLABELS[4], bg=self.BACKGROUND_COLOR)
                 entry = ttk.Combobox(higherFrame, values=self.PROGRAMABLEPARAMETERS[i + j], state="disabled")
                 self.__labelArr.append(label)
                 label.grid(row=i, column=j, padx=60, pady=2)
                 self.__entryArr.append(entry)
                 entry.grid(row=i + 1, column=j, padx=60, pady=2)
                 self.__buttonArr.append(entry)
-
 
     def __initalizeConstants(self):
         for i in range(40):
@@ -643,11 +607,10 @@ class ContentWindow(tk.Frame):
         self.__DCM.resetMode()
         self.__DCM.pack()
 
-    def logout(self):
-        self.__DCM.pack_forget()
-        self.__loginWindow.setPaddingVisible()
-        self.__loginWindow.pack()
-
+#    def logout(self):
+#        self.__DCM.pack_forget()
+#        self.__loginWindow.setPaddingVisible()
+#        self.__loginWindow.pack()
 
 # Main script
 if __name__ == "__main__":
