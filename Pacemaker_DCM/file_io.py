@@ -43,59 +43,23 @@ class FileIO:
     
     def write_parameter(self, values, username, mode):
         """
-        将参数值写入与用户名关联的文件中，且仅覆盖当前模式的值。
-        参数 'values' 期望是一个字段名称及其对应值的字典。
+        将参数值添加到文件的末尾，仅堆叠新模式和参数，不更新已有内容。
         """
         user_file_path = os.path.join(self.db_folder, f"{username}.txt")
 
-        # 如果用户文件不存在，返回 False（无法写入）
+        # 如果用户文件不存在，返回 False
         if not os.path.exists(user_file_path):
             return False
 
-        # 先读取文件中的内容，保存原有的密码和模式部分
-        with open(user_file_path, 'r') as file:
-            lines = file.readlines()
-
-        password = None
-        existing_parameters = {}
-        mode_section = None
-        # 提取密码和已有的模式参数部分
-        for i, line in enumerate(lines):
-            if line.startswith("Password:"):
-                password = line.strip()
-            elif line.strip() == "Parameters:":
-                # 从 "Parameters:" 之后开始查找参数
-                parameter_section = True
-                continue
-            elif parameter_section:
-                if line.strip():  # 如果当前行有内容
-                    if line.startswith("Mode:"):
-                        mode_section = line.strip().split(":")[1].strip()  # 获取当前存储的模式
-                    else:
-                        key, value = line.split(":", 1)  # 按 ": " 分割
-                        existing_parameters[key.strip()] = value.strip()
-
-        # 如果当前文件中有该模式的参数，更新该模式的参数
-        if mode_section and mode == mode_section:
-            # 只更新与当前模式相关的参数
-            existing_parameters.update(values)
-        else:
-            # 没有该模式，或者模式不同，保持原模式值
-            existing_parameters["Mode"] = mode
-            existing_parameters.update(values)
-
-        # 重写文件，确保不覆盖密码，更新参数
-        with open(user_file_path, 'w') as file:
-            if password:
-                file.write(f"{password}\n")
-
-            file.write("\nParameters:\n")
-            file.write(f"Mode: {mode}\n")
-            for key, value in existing_parameters.items():
-                if key != "Mode":
-                    file.write(f"{key}: {value}\n")
+        # 打开文件进行追加操作
+        with open(user_file_path, 'a') as file:
+            # 将新的模式和参数附加到文件末尾
+            file.write(f"\nMode: {mode}\n")
+            for key, value in values.items():
+                file.write(f"{key}: {value}\n")
 
         return True
+
 
     def load_parameter(self, username):
         """

@@ -9,7 +9,7 @@ class ApplicationWindow:
     def __init__(self, root, username):
         self.root = root
         self.root.title("Pacing Mode Selection")
-        self.root.geometry("900x700")
+        self.root.geometry("900x500")
 
         self.username = username  # 当前登录的用户名
         self.parameter_manager = ParamEnum()  # 参数管理实例
@@ -217,55 +217,59 @@ class ApplicationWindow:
             return {}
 
     def save_user_parameters(self):
-        """保存用户参数，包括模式。"""
+        """保存用户参数"""
         try:
-            # 获取当前输入框的字段值
+            # 从输入框中获取字段值，确保文本是数字，若为空则默认使用0
             field_values = {
-                "Amplitude": self.get_float_value("Amplitude", 100),
-                "LRL": self.get_float_value("LRL", 60),
-                "Pulsewidth": self.get_float_value("Pulsewidth", 0.4),
-                "Threshold": self.get_float_value("Threshold", 66),
-                "ARP": self.get_float_value("ARP", 320),
-                "VRP": self.get_float_value("VRP", 320),
-                "URL": self.get_float_value("URL", 120),
-                "MSR": self.get_float_value("MSR", 120),
-                "Activity_Threshold": self.get_float_value("Activity_Threshold", 1.1),
-                "Response_Factor": self.get_float_value("Response_Factor", 8),
-                "Reaction_time": self.get_float_value("Reaction_time", 10),
-                "Recovery_time": self.get_float_value("Recovery_time", 30),
+                "Amplitude": self.get_float_value("Amplitude", 100),  # 默认初始值 100
+                "LRL": self.get_float_value("LRL", 60),                # 默认初始值 60
+                "Pulsewidth": self.get_float_value("Pulsewidth", 0.4),  # 默认初始值 0.4
+                "Threshold": self.get_float_value("Threshold", 66),    # 默认初始值 66
+                "ARP": self.get_float_value("ARP", 320),               # 默认初始值 320
+                "VRP": self.get_float_value("VRP", 320),               # 默认初始值 320
+                "URL": self.get_float_value("URL", 120),               # 默认初始值 120
+                "MSR": self.get_float_value("MSR", 120),               # 默认初始值 120
+                "Activity_Threshold": self.get_float_value("Activity_Threshold", 1.1),  # 默认初始值 1.1
+                "Response_Factor": self.get_float_value("Response_Factor", 8),          # 默认初始值 8
+                "Reaction_time": self.get_float_value("Reaction_time", 10),            # 默认初始值 10
+                "Recovery_time": self.get_float_value("Recovery_time", 30),            # 默认初始值 30
             }
 
-            # 将当前模式值也保存到字典中
-            field_values["mode"] = self.pacing_mode_var.get()
+            # 获取当前模式（例如："AOO", "VOO", "VVI" 等）
+            mode = self.pacing_mode_var.get()
 
             # 打印当前的 Amplitude 和字段值字典，用于调试
             print(f"Amplitude from parameter manager: {self.parameter_manager.getAmplitude()}")
             print(f"Field Values: {field_values}")
-
+            
             # 使用绝对路径创建 FileIO 实例
             file_io = FileIO(os.path.dirname(os.path.abspath(__file__)))
-
+            
             # 写入参数到文件
-            success = file_io.write_parameter(field_values, self.username)
-
+            success = file_io.write_parameter(field_values, username=self.username, mode=mode)
+            
             # 输出成功或失败信息
             if success:
                 print("Parameters saved successfully.")
             else:
                 print("Failed to save parameters.")
-
+        
         except Exception as e:
             print(f"Error while saving parameters: {e}")
+
 
     def get_float_value(self, field_name, default_value=0):
         """安全地从输入框获取字段值并转换为浮动值"""
         value = self.fields.get(field_name)  # 获取 Entry 对象
+        print(value)
         if value is not None:
             text_value = value.get()  # 获取文本内容
+            print(text_value)
             try:
                 # 尝试转换为 float 类型
                 return float(text_value) if text_value else default_value
             except ValueError:
+                print(f"Invalid input for {field_name}, using default value {default_value}")
                 return default_value  # 如果转换失败，返回默认值
         return default_value  # 如果字段不存在，返回默认值
 
