@@ -1,0 +1,16 @@
+Password: 222222
+
+Parameters:
+Amplitude: 100
+LRL: 60
+Pulsewidth: 0.4
+Threshold: 66
+ARP: 320
+VRP: 320
+URL: 120
+MSR: 120
+Activity_Threshold: 1.1
+Response_Factor: 8
+Reaction_time: 10
+Recovery_time: 30
+mode: AAI

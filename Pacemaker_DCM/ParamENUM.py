@@ -1,4 +1,4 @@
-class ParameterManager:
+class ParamEnum:
     def __init__(self):
         #default val
         self.__amplitude = 100

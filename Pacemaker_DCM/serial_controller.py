@@ -34,6 +34,7 @@ class SerialManager:
 
     def is_connected(self):
         """检查串口是否连接"""
+        print("serial is successfully connected")
         return self.serial_port and self.serial_port.is_open
 
     def send_data(self, data):

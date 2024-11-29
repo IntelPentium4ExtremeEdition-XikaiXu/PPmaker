@@ -41,9 +41,9 @@ class FileIO:
 
         return user_data
     
-    def write_parameter(self, values, username):
+    def write_parameter(self, values, username, mode):
         """
-        将参数值写入与用户名关联的文件中。
+        将参数值写入与用户名关联的文件中，且仅覆盖当前模式的值。
         参数 'values' 期望是一个字段名称及其对应值的字典。
         """
         user_file_path = os.path.join(self.db_folder, f"{username}.txt")
@@ -52,28 +52,49 @@ class FileIO:
         if not os.path.exists(user_file_path):
             return False
 
-        # 先读取文件中的内容，保存原有的密码部分
+        # 先读取文件中的内容，保存原有的密码和模式部分
         with open(user_file_path, 'r') as file:
             lines = file.readlines()
 
         password = None
-        # 提取密码部分
-        for line in lines:
+        existing_parameters = {}
+        mode_section = None
+        # 提取密码和已有的模式参数部分
+        for i, line in enumerate(lines):
             if line.startswith("Password:"):
                 password = line.strip()
-                break
+            elif line.strip() == "Parameters:":
+                # 从 "Parameters:" 之后开始查找参数
+                parameter_section = True
+                continue
+            elif parameter_section:
+                if line.strip():  # 如果当前行有内容
+                    if line.startswith("Mode:"):
+                        mode_section = line.strip().split(":")[1].strip()  # 获取当前存储的模式
+                    else:
+                        key, value = line.split(":", 1)  # 按 ": " 分割
+                        existing_parameters[key.strip()] = value.strip()
 
-        # 如果密码部分存在，将其保留下来，写入新的参数部分
+        # 如果当前文件中有该模式的参数，更新该模式的参数
+        if mode_section and mode == mode_section:
+            # 只更新与当前模式相关的参数
+            existing_parameters.update(values)
+        else:
+            # 没有该模式，或者模式不同，保持原模式值
+            existing_parameters["Mode"] = mode
+            existing_parameters.update(values)
+
+        # 重写文件，确保不覆盖密码，更新参数
         with open(user_file_path, 'w') as file:
-            # 如果密码部分存在，先写入密码
             if password:
                 file.write(f"{password}\n")
-            
-            # 然后将参数值写入文件
+
             file.write("\nParameters:\n")
-            for key, value in values.items():
-                file.write(f"{key}: {value}\n")
-                print(value)
+            file.write(f"Mode: {mode}\n")
+            for key, value in existing_parameters.items():
+                if key != "Mode":
+                    file.write(f"{key}: {value}\n")
+
         return True
 
     def load_parameter(self, username):
@@ -94,14 +115,20 @@ class FileIO:
 
         # 查找 "Parameters" 之后的字段和值
         parameter_section = False
+        mode = None
         for line in lines:
             # 发现 "Parameters" 字段后，开始读取参数
             if line.strip() == "Parameters:":
                 parameter_section = True
                 continue  # Skip the "Parameters:" line
             if parameter_section:
-                if line.strip():  # 如果当前行有内容
+                if line.startswith("Mode:"):
+                    mode = line.split(":")[1].strip()  # 获取存储的模式
+                elif line.strip():  # 如果当前行有内容
                     key, value = line.split(":", 1)  # 按 ": " 分割
                     parameters[key.strip()] = value.strip()
+
+        if mode:
+            parameters["Mode"] = mode
 
         return parameters

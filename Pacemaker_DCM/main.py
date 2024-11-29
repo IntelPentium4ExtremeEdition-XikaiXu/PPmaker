@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from serial_controller import SerialManager  # 导入新创建的 SerialManager 类
-from ParameterManager import ParameterManager
+from ParamENUM import ParamEnum
 from serial_controller import SerialManager
 from file_io import FileIO
 import os
@@ -12,10 +12,11 @@ class ApplicationWindow:
         self.root.geometry("900x700")
 
         self.username = username  # 当前登录的用户名
-        self.parameter_manager = ParameterManager()  # 参数管理实例
+        self.parameter_manager = ParamEnum()  # 参数管理实例
         self.user_parameters = self.load_user_parameters()  # 加载用户参数
         self.serial_manager = SerialManager()  # 创建 SerialManager 实例
-
+        # 默认从存储中加载模式，如果有的话
+        self.selected_mode = self.user_parameters.get("mode", "None")  # 默认模式为 "None"
         # 布局创建
         self.create_header()
         self.create_mode_selection()
@@ -42,7 +43,7 @@ class ApplicationWindow:
         mode_label = tk.Label(mode_frame, text="Select Mode:")
         mode_label.pack(side=tk.LEFT, padx=10)
 
-        self.pacing_mode_var = tk.StringVar(value="None")
+        self.pacing_mode_var = tk.StringVar(value=self.selected_mode)  # 使用选中的模式值初始化
         self.pacing_mode_dropdown = ttk.Combobox(mode_frame, textvariable=self.pacing_mode_var)
         self.pacing_mode_dropdown["values"] = [
             "None", "AOO", "VOO", "AAI", "VVI", "AOOR", "AAIR", "VOOR", "VVIR"]
@@ -193,19 +194,13 @@ class ApplicationWindow:
             entry.config(state=tk.NORMAL if field_name in relevant_fields else tk.DISABLED)
 
     def get_relevant_parameters_for_mode(self, mode):
-        field_names = [
-            "Ampitute","LRL",
-            "Pulsewidth", "Threshold" , "ARP",
-            "VRP", "URL", "MSR", "Activity_Threshold",
-            "Response_Factor", "Reaction_time", "Recovery_time"
-        ]
         """根据模式获取相关参数字段。"""
         relevant_params = {
             "AOO": ["LRL", "URL", "Pulsewidth","Ampitute"],
             "AAI": ["LRL", "URL", "Amplitude", "Pulsewidth", "ARP"],
             "VOO": ["LRL", "URL", "Pulsewidth","Ampitute"],
             "VVI": ["LRL", "URL", "Amplitude", "Pulsewidth", "VRP"],
-            "AOOR": ["LRL", "URL","MSR", "Pulsewidth","Ampitute","Reaction_time","Response_Factor","Activity_Threshold"],
+            "AOOR": ["LRL", "URL","MSR", "Pulsewidth","Amplitude","Reaction_time","Response_Factor","Activity_Threshold"],
             "AAIR": ["LRL", "URL", "Amplitude", "Pulsewidth", "ARP","Response_Factor", "Reaction_time", "Recovery_time","Activity_Threshold"],
             "VOOR": ["LRL", "URL", "Amplitude", "Pulsewidth", "ARP","Response_Factor", "Reaction_time", "Recovery_time","Activity_Threshold"],
             "VVIR": ["LRL", "URL", "Amplitude", "Pulsewidth", "MSR","ARP","Response_Factor", "Reaction_time", "Recovery_time"],
@@ -213,48 +208,52 @@ class ApplicationWindow:
         return relevant_params.get(mode, [])
 
     def load_user_parameters(self):
-        """加载用户参数。"""
+        """加载用户参数，包括模式。"""
         try:
-            FileIO.load_parameter(self.username)
-        except:
+            user_params = FileIO.load_parameter(self.username)  # 从文件加载参数
+            return user_params if user_params else {}
+        except Exception as e:
+            print(f"Error loading user parameters: {e}")
             return {}
 
     def save_user_parameters(self):
-        """保存用户参数"""
+        """保存用户参数，包括模式。"""
         try:
-            # 从输入框中获取字段值，确保文本是数字，若为空则默认使用0
+            # 获取当前输入框的字段值
             field_values = {
-                "Amplitude": self.get_float_value("Amplitude", 100),  # 默认初始值 100
-                "LRL": self.get_float_value("LRL", 60),                # 默认初始值 60
-                "Pulsewidth": self.get_float_value("Pulsewidth", 0.4),  # 默认初始值 0.4
-                "Threshold": self.get_float_value("Threshold", 66),    # 默认初始值 66
-                "ARP": self.get_float_value("ARP", 320),               # 默认初始值 320
-                "VRP": self.get_float_value("VRP", 320),               # 默认初始值 320
-                "URL": self.get_float_value("URL", 120),               # 默认初始值 120
-                "MSR": self.get_float_value("MSR", 120),               # 默认初始值 120
-                "Activity_Threshold": self.get_float_value("Activity_Threshold", 1.1),  # 默认初始值 1.1
-                "Response_Factor": self.get_float_value("Response_Factor", 8),          # 默认初始值 8
-                "Reaction_time": self.get_float_value("Reaction_time", 10),            # 默认初始值 10
-                "Recovery_time": self.get_float_value("Recovery_time", 30),            # 默认初始值 30
+                "Amplitude": self.get_float_value("Amplitude", 100),
+                "LRL": self.get_float_value("LRL", 60),
+                "Pulsewidth": self.get_float_value("Pulsewidth", 0.4),
+                "Threshold": self.get_float_value("Threshold", 66),
+                "ARP": self.get_float_value("ARP", 320),
+                "VRP": self.get_float_value("VRP", 320),
+                "URL": self.get_float_value("URL", 120),
+                "MSR": self.get_float_value("MSR", 120),
+                "Activity_Threshold": self.get_float_value("Activity_Threshold", 1.1),
+                "Response_Factor": self.get_float_value("Response_Factor", 8),
+                "Reaction_time": self.get_float_value("Reaction_time", 10),
+                "Recovery_time": self.get_float_value("Recovery_time", 30),
             }
+
+            # 将当前模式值也保存到字典中
+            field_values["mode"] = self.pacing_mode_var.get()
 
             # 打印当前的 Amplitude 和字段值字典，用于调试
             print(f"Amplitude from parameter manager: {self.parameter_manager.getAmplitude()}")
             print(f"Field Values: {field_values}")
-            
-            username = self.username  # 获取用户名
+
             # 使用绝对路径创建 FileIO 实例
             file_io = FileIO(os.path.dirname(os.path.abspath(__file__)))
-            
+
             # 写入参数到文件
-            success = file_io.write_parameter(field_values, username)
-            
+            success = file_io.write_parameter(field_values, self.username)
+
             # 输出成功或失败信息
             if success:
                 print("Parameters saved successfully.")
             else:
                 print("Failed to save parameters.")
-        
+
         except Exception as e:
             print(f"Error while saving parameters: {e}")
 
