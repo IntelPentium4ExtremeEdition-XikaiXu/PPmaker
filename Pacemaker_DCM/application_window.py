@@ -1,24 +1,21 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import pickle
-import serial
-import struct
+from serial_controller import SerialManager  # 导入新创建的 SerialManager 类
 from ParameterManager import ParameterManager
+import pickle  # 用于保存和加载用户参数
 
 
 class ApplicationWindow:
     def __init__(self, root, username):
         self.root = root
         self.root.title("Pacing Mode Selection")
-        self.root.geometry("1000x700")
+        self.root.geometry("900x700")
 
-        # 用户相关信息和参数管理
-        self.username = username
-        self.parameter_manager = ParameterManager()
-        self.user_parameters = self.load_user_parameters()
+        self.username = username  # 当前登录的用户名
+        self.parameter_manager = ParameterManager()  # 参数管理实例
+        self.user_parameters = self.load_user_parameters()  # 加载用户参数
 
-        # 串口对象初始化
-        self.serial_port = None
+        self.serial_manager = SerialManager()  # 创建 SerialManager 实例
 
         # 布局创建
         self.create_header()
@@ -60,6 +57,7 @@ class ApplicationWindow:
         param_frame = tk.Frame(self.root)
         param_frame.pack(pady=20)
 
+        # 字段名称列表
         field_names = [
             "Lower Rate Limit", "Upper Rate Limit", "Atrial Amplitude", "Atrial Pulse Width",
             "Ventricular Amplitude", "Ventricular Pulse Width", "VRP", "ARP", "PVARP",
@@ -68,12 +66,21 @@ class ApplicationWindow:
             "Response Factor", "Recovery Time"
         ]
 
+        # 每排字段数量
+        fields_per_column = (len(field_names) + 1) // 2
+
         for i, field_name in enumerate(field_names):
+            column = i // fields_per_column  # 根据索引计算列号
+            row = i % fields_per_column  # 根据索引计算行号
+
             label = tk.Label(param_frame, text=f"{field_name}:", font=("Arial", 10))
             entry = tk.Entry(param_frame, font=("Arial", 10))
-            label.grid(row=i, column=0, sticky=tk.E, padx=10, pady=5)
-            entry.grid(row=i, column=1, sticky=tk.W, padx=10, pady=5)
+
+            label.grid(row=row, column=column * 2, sticky=tk.E, padx=10, pady=5)  # label 在偶数列
+            entry.grid(row=row, column=column * 2 + 1, sticky=tk.W, padx=10, pady=5)  # entry 在奇数列
+
             self.fields[field_name] = entry
+
 
     def create_buttons(self):
         """创建“应用”和“发送数据”按钮。"""
@@ -96,33 +103,34 @@ class ApplicationWindow:
 
     def connect_to_device(self):
         """尝试连接到 pacemaker 设备并更新连接状态。"""
-        try:
-            self.serial_port = serial.Serial(port="COM3", baudrate=115200, timeout=1)
+        if self.serial_manager.connect():
             self.status_label.config(text="Device connected", fg="green")
-        except serial.SerialException:
+        else:
             self.status_label.config(text="Device not connected", fg="red")
 
     def send_parameters(self):
         """将参数打包并通过串口发送。"""
-        if not self.serial_port:
+        field_values = {  # 从输入框中获取字段值
+            "Lower Rate Limit": self.fields["Lower Rate Limit"].get(),
+            "Upper Rate Limit": self.fields["Upper Rate Limit"].get(),
+            "Atrial Amplitude": self.fields["Atrial Amplitude"].get(),
+            "Ventricular Amplitude": self.fields["Ventricular Amplitude"].get(),
+            # 添加更多字段
+        }
+
+        if not self.serial_manager.is_connected():
             messagebox.showerror("Error", "Device not connected")
             return
 
-        try:
-            header = struct.pack('<2B', 0x16, 0x55)  # 示例头部
-            data_format = '<4B2f2B2f3Hf2B1H'  # 示例数据格式
-            data = struct.pack(
-                data_format,
-                int(self.fields["Lower Rate Limit"].get()),
-                int(self.fields["Upper Rate Limit"].get()),
-                float(self.fields["Atrial Amplitude"].get()),
-                float(self.fields["Ventricular Amplitude"].get()),
-                # 添加更多参数
-            )
-            self.serial_port.write(header + data)
-            messagebox.showinfo("Success", "Parameters sent successfully!")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to send parameters: {str(e)}")
+        # 构建数据包并发送
+        data_packet = self.serial_manager.build_data_packet(field_values)
+        if data_packet:
+            if self.serial_manager.send_data(data_packet):
+                messagebox.showinfo("Success", "Parameters sent successfully!")
+            else:
+                messagebox.showerror("Error", "Failed to send parameters.")
+        else:
+            messagebox.showerror("Error", "Failed to build data packet.")
 
     def apply_parameters(self):
         """应用参数并验证输入的有效性。"""
