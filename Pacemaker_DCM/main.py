@@ -4,8 +4,9 @@ from tkinter import ttk
 from tkinter import *
 from tkinter import messagebox
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,                                               NavigationToolbar2Tk)
-from IOStream import FileIO, SerialComm
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from Storage import FileIO
+from Serial import SerialComm
 from time import sleep
 import time
 import threading
