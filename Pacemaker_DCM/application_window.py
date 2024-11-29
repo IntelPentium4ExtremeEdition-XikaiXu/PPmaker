@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 import pickle
 import serial
 import struct
-from PPmaker.new_attempt.branch.ParameterManager import ParameterManager
+from ParameterManager import ParameterManager
 
 
 class ApplicationWindow:
