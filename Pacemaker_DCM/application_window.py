@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 from serial_controller import SerialManager  # 导入新创建的 SerialManager 类
 from ParameterManager import ParameterManager
 import pickle  # 用于保存和加载用户参数
-
+from serial_controller import SerialManager
 
 class ApplicationWindow:
     def __init__(self, root, username):
@@ -94,19 +94,49 @@ class ApplicationWindow:
         send_button.pack(side=tk.LEFT, padx=20)
 
     def create_status_display(self):
-        """创建连接状态显示区域。"""
-        self.status_label = tk.Label(self.root, text="Device not connected", font=("Arial", 12), fg="red")
-        self.status_label.pack(pady=10)
+        """创建连接状态显示区域，并添加串口选择下拉菜单。"""
+        status_frame = tk.Frame(self.root)
+        status_frame.pack(pady=10)
 
-        connect_button = tk.Button(self.root, text="Connect", command=self.connect_to_device)
-        connect_button.pack(pady=5)
+        # 状态显示标签
+        self.status_label = tk.Label(status_frame, text="Device not connected", font=("Arial", 12), fg="red")
+        self.status_label.pack(side=tk.LEFT, padx=10)
+
+        # 串口选择下拉菜单
+        self.com_var = tk.StringVar()
+        self.com_dropdown = ttk.Combobox(status_frame, textvariable=self.com_var, state="readonly")
+        self.refresh_com_ports()  # 初始化下拉菜单内容
+        self.com_dropdown.pack(side=tk.LEFT, padx=10)
+
+        # 刷新串口按钮
+        refresh_button = tk.Button(status_frame, text="Refresh Ports", command=self.refresh_com_ports)
+        refresh_button.pack(side=tk.LEFT, padx=10)
+
+        # 连接按钮
+        connect_button = tk.Button(status_frame, text="Connect", command=self.connect_to_device)
+        connect_button.pack(side=tk.LEFT, padx=10)
+
+    def refresh_com_ports(self):
+        """刷新串口列表并更新到下拉菜单。"""
+        ports = self.serial_manager.list_available_ports()
+        if ports:
+            self.com_dropdown['values'] = ports
+            self.com_dropdown.current(0)  # 默认选择第一个串口
+        else:
+            self.com_dropdown['values'] = ["No COM Ports Available"]
+            self.com_dropdown.current(0)
 
     def connect_to_device(self):
-        """尝试连接到 pacemaker 设备并更新连接状态。"""
-        if self.serial_manager.connect():
-            self.status_label.config(text="Device connected", fg="green")
+        """尝试连接到选定的串口设备并更新连接状态。"""
+        selected_port = self.com_var.get()
+        if selected_port and selected_port != "No COM Ports Available":
+            self.serial_manager.port = selected_port  # 更新 SerialManager 的端口
+            if self.serial_manager.connect():
+                self.status_label.config(text=f"Connected to {selected_port}", fg="green")
+            else:
+                self.status_label.config(text=f"Failed to connect to {selected_port}", fg="red")
         else:
-            self.status_label.config(text="Device not connected", fg="red")
+            messagebox.showerror("Error", "No valid COM port selected")
 
     def send_parameters(self):
         """将参数打包并通过串口发送。"""

@@ -2,6 +2,7 @@ import serial
 import struct
 import time
 from tkinter import messagebox
+from serial.tools import list_ports  # 用于列出可用的串口
 
 class SerialManager:
     def __init__(self, port="COM3", baudrate=115200, timeout=1):
@@ -10,6 +11,12 @@ class SerialManager:
         self.timeout = timeout
         self.serial_port = None
 
+    def list_available_ports(self):
+        """列出所有可用的串口"""
+        ports = list_ports.comports()  # 获取所有可用串口
+        available_ports = [port.device for port in ports]
+        return available_ports
+
     def connect(self):
         """连接到串口设备"""
         try:
@@ -17,7 +24,7 @@ class SerialManager:
             if self.serial_port.is_open:
                 return True
         except serial.SerialException as e:
-            print(f"Failed to connect to {self.port}: {e}")
+            print(f"无法连接到 {self.port}: {e}")
             return False
 
     def disconnect(self):
@@ -36,10 +43,10 @@ class SerialManager:
                 self.serial_port.write(data)
                 return True
             except Exception as e:
-                print(f"Error sending data: {e}")
+                print(f"发送数据时出错: {e}")
                 return False
         else:
-            print("Device not connected")
+            print("设备未连接")
             return False
 
     def build_data_packet(self, field_values):
@@ -57,5 +64,5 @@ class SerialManager:
             )
             return header + data
         except Exception as e:
-            print(f"Error packing data: {e}")
+            print(f"构建数据包时出错: {e}")
             return None
