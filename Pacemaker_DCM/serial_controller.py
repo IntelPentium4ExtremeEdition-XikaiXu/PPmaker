@@ -41,6 +41,7 @@ class SerialManager:
         if self.is_connected():
             try:
                 self.serial_port.write(data)
+                print(data)
                 return True
             except Exception as e:
                 print(f"发送数据时出错: {e}")
@@ -52,17 +53,26 @@ class SerialManager:
     def build_data_packet(self, field_values):
         """根据字段值构建数据包"""
         try:
-            header = struct.pack(0x16, 0x55)  # 示例头部
-            data_format = '<4B2f2B2f3Hf2B1H'  # 示例数据格式
+            header = struct.pack('<B', 0x16)  # 示例头部
+            body = struct.pack('<B', 0x55)  # 示例头部
+            mod = struct.pack('<2B', 0x00)  # 示例头部
+            data_format = '<2B2B2B4f2B4B4B2B2B4f2B2B2B2B'  # 示例数据格式
             data = struct.pack(
                 data_format,
-                int(field_values["Lower Rate Limit"]),
-                int(field_values["Upper Rate Limit"]),
-                float(field_values["Atrial Amplitude"]),
-                float(field_values["Ventricular Amplitude"]),
-                # 其他字段
+                int(field_values["Ampitute"]),
+                int(field_values["LRL"]),
+                float(field_values["Pulsewidth"]),
+                int(field_values["Threshold"]),
+                float(field_values["ARP"]),
+                float(field_values["VRP"]),
+                int(field_values["URL"]),
+                int(field_values["MSR"]),
+                float(field_values["Activity_Threshold"]),
+                int(field_values["Response_Factor"]),
+                int(field_values["Reaction_time"]),
+                int(field_values["Recovery_time"]),
             )
-            return header + data
+            return header + body + mod + data
         except Exception as e:
             print(f"构建数据包时出错: {e}")
             return None

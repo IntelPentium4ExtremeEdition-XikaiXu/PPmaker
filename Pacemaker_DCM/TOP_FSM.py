@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 import os
-from file_io import FileIO  # 导入 FileIO 类
+from file_io import FileIO
 from application_window import ApplicationWindow
 
 class MainWindow:
@@ -33,19 +33,19 @@ class MainWindow:
         btn_frame.pack(pady=15)
 
         # 注册按钮
-        register_btn = tk.Button(btn_frame, text="注册", command=self.register_user, width=15)
+        register_btn = tk.Button(btn_frame, text="signed", command=self.register_user, width=15)
         register_btn.pack(side=tk.LEFT, padx=5)
 
         # 登录按钮
-        login_btn = tk.Button(btn_frame, text="登录", command=self.login_user, width=15)
+        login_btn = tk.Button(btn_frame, text="login", command=self.login_user, width=15)
         login_btn.pack(side=tk.LEFT, padx=5)
 
         # 退出按钮
-        exit_btn = tk.Button(root, text="退出", command=self.root.quit, width=5)
+        exit_btn = tk.Button(root, text="quit", command=self.root.quit, width=5)
         exit_btn.pack(side=tk.RIGHT, padx=20)
 
         # 成功信息标签
-        self.success_msg = tk.Label(root, text="")
+        self.success_msg = tk.Label(root, text="ACT")
         self.success_msg.pack(pady=20)
 
     def register_user(self):
@@ -58,13 +58,13 @@ class MainWindow:
         if username and password:
             success = self.file_io.save_user(username, password)
             if success:
-                self.success_msg.config(text="注册成功！")
+                self.success_msg.config(text="sign success")
                 self.usrname.delete(0, tk.END)
                 self.password_input.delete(0, tk.END)
             else:
-                messagebox.showwarning("错误", "用户名已存在！")
+                messagebox.showwarning("error, user has already in the database")
         else:
-            messagebox.showwarning("错误", "请填写用户名和密码。")
+            messagebox.showwarning("error please input username or password")
 
     def login_user(self):
         """
@@ -76,16 +76,16 @@ class MainWindow:
         if username and password:
             user_data = self.file_io.load_user(username)
             if not user_data:
-                messagebox.showwarning("错误", "用户名不存在。")
+                messagebox.showwarning("error", "no user account")
                 return
 
             if user_data.get('password') == password:
-                self.success_msg.config(text="登录成功！")
+                self.success_msg.config(text="login in success")
                 self.open_application_window(username)
             else:
-                messagebox.showwarning("错误", "密码错误。")
+                messagebox.showwarning("error no passwordW")
         else:
-            messagebox.showwarning("错误", "请填写用户名和密码。")
+            messagebox.showwarning("error", "please input password")
             
     def open_application_window(self, username):
         """

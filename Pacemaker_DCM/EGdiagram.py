@@ -7,7 +7,8 @@ class rander:
         self.__annotations__
         
     def __displayGraph(self):
-        """线程函数，用于绘制ECG图
+        """
+        线程函数，用于绘制ECG图
         """
         global write
         t = time.time()  # 记录当前时间

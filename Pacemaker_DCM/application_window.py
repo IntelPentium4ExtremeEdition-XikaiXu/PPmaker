@@ -143,6 +143,7 @@ class ApplicationWindow:
 
     def send_parameters(self):
         """将参数打包并通过串口发送。"""
+        
         field_values = {  # 从输入框中获取字段值
             "Ampitute": self.fields["Ampitute"].get(),
             "LRL": self.fields["LRL"].get(),
@@ -177,6 +178,7 @@ class ApplicationWindow:
         try:
             for field_name, entry in self.fields.items():
                 value = entry.get()
+                print(value)
                 if value:
                     setattr(self.parameter_manager, f"set{field_name.replace(' ', '')}", value)
             messagebox.showinfo("Success", "Parameters applied successfully!")
@@ -191,10 +193,22 @@ class ApplicationWindow:
             entry.config(state=tk.NORMAL if field_name in relevant_fields else tk.DISABLED)
 
     def get_relevant_parameters_for_mode(self, mode):
+        field_names = [
+            "Ampitute","LRL",
+            "Pulsewidth", "Threshold" , "ARP",
+            "VRP", "URL", "MSR", "Activity_Threshold",
+            "Response_Factor", "Reaction_time", "Recovery_time"
+        ]
         """根据模式获取相关参数字段。"""
         relevant_params = {
-            "AOO": ["LRL", "URL", "Pulsewidth"],
+            "AOO": ["LRL", "URL", "Pulsewidth","Ampitute"],
             "AAI": ["LRL", "URL", "Amplitude", "Pulsewidth", "ARP"],
+            "VOO": ["LRL", "URL", "Pulsewidth","Ampitute"],
+            "VVI": ["LRL", "URL", "Amplitude", "Pulsewidth", "VRP"],
+            "AOOR": ["LRL", "URL","MSR", "Pulsewidth","Ampitute","Reaction_time","Response_Factor","Activity_Threshold"],
+            "AAIR": ["LRL", "URL", "Amplitude", "Pulsewidth", "ARP","Response_Factor", "Reaction_time", "Recovery_time","Activity_Threshold"],
+            "VOOR": ["LRL", "URL", "Amplitude", "Pulsewidth", "ARP","Response_Factor", "Reaction_time", "Recovery_time","Activity_Threshold"],
+            "VVIR": ["LRL", "URL", "Amplitude", "Pulsewidth", "MSR","ARP","Response_Factor", "Reaction_time", "Recovery_time"],
         }
         return relevant_params.get(mode, [])
 
@@ -206,29 +220,58 @@ class ApplicationWindow:
             return {}
 
     def save_user_parameters(self):
-        field_values = {  
-            "Amplitude": self.fields["Amplitude"].get() or 0,  # 如果没有值，则使用默认值0
-            "LRL": self.fields["LRL"].get() or 0,
-            "Pulsewidth": self.fields["Pulsewidth"].get() or 0,
-            "Threshold": self.fields["Threshold"].get() or 0,
-            "ARP": self.fields["ARP"].get() or 0,
-            "VRP": self.fields["VRP"].get() or 0,
-            "URL": self.fields["URL"].get() or 0,
-            "MSR": self.fields["MSR"].get() or 0,
-            "Activity_Threshold": self.fields["Activity_Threshold"].get() or 0,
-            "Response_Factor": self.fields["Response_Factor"].get() or 0,
-            "Reaction_time": self.fields["Reaction_time"].get() or 0,
-            "Recovery_time": self.fields["Recovery_time"].get() or 0,
-        }
-        print(field_values)
-        username = self.username
-        print(username)
-        file_io = FileIO(os.path.dirname(os.path.abspath(__file__)))
-        success = file_io.write_parameter(field_values,username)
-        if success: print("lol")
+        """保存用户参数"""
+        try:
+            # 从输入框中获取字段值，确保文本是数字，若为空则默认使用0
+            field_values = {
+                "Amplitude": self.get_float_value("Amplitude", 100),  # 默认初始值 100
+                "LRL": self.get_float_value("LRL", 60),                # 默认初始值 60
+                "Pulsewidth": self.get_float_value("Pulsewidth", 0.4),  # 默认初始值 0.4
+                "Threshold": self.get_float_value("Threshold", 66),    # 默认初始值 66
+                "ARP": self.get_float_value("ARP", 320),               # 默认初始值 320
+                "VRP": self.get_float_value("VRP", 320),               # 默认初始值 320
+                "URL": self.get_float_value("URL", 120),               # 默认初始值 120
+                "MSR": self.get_float_value("MSR", 120),               # 默认初始值 120
+                "Activity_Threshold": self.get_float_value("Activity_Threshold", 1.1),  # 默认初始值 1.1
+                "Response_Factor": self.get_float_value("Response_Factor", 8),          # 默认初始值 8
+                "Reaction_time": self.get_float_value("Reaction_time", 10),            # 默认初始值 10
+                "Recovery_time": self.get_float_value("Recovery_time", 30),            # 默认初始值 30
+            }
+
+            # 打印当前的 Amplitude 和字段值字典，用于调试
+            print(f"Amplitude from parameter manager: {self.parameter_manager.getAmplitude()}")
+            print(f"Field Values: {field_values}")
+            
+            username = self.username  # 获取用户名
+            # 使用绝对路径创建 FileIO 实例
+            file_io = FileIO(os.path.dirname(os.path.abspath(__file__)))
+            
+            # 写入参数到文件
+            success = file_io.write_parameter(field_values, username)
+            
+            # 输出成功或失败信息
+            if success:
+                print("Parameters saved successfully.")
+            else:
+                print("Failed to save parameters.")
+        
+        except Exception as e:
+            print(f"Error while saving parameters: {e}")
+
+    def get_float_value(self, field_name, default_value=0):
+        """安全地从输入框获取字段值并转换为浮动值"""
+        value = self.fields.get(field_name)  # 获取 Entry 对象
+        if value is not None:
+            text_value = value.get()  # 获取文本内容
+            try:
+                # 尝试转换为 float 类型
+                return float(text_value) if text_value else default_value
+            except ValueError:
+                return default_value  # 如果转换失败，返回默认值
+        return default_value  # 如果字段不存在，返回默认值
 
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = ApplicationWindow(root, username="test_user")
+    app = ApplicationWindow(root, username="becnch")
     root.mainloop()
