@@ -1,1 +1,15 @@
 Password: 111111
+
+Parameters:
+Ampitute: 
+LRL: 
+Pulsewidth: 
+Threshold: 
+ARP: 
+VRP: 
+URL: 
+MSR: 
+Activity_Threshold: 
+Response_Factor: 
+Reaction_time: 
+Recovery_time: 

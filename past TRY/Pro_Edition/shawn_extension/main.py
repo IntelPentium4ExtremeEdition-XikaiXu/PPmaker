@@ -370,7 +370,7 @@ class DCMWindow(tk.Frame):
         while not write:
             if not (sc.getCurrentPort() is None):
                 if not write:        #match recieve aoo amp[               ][thers][arp           ][  axp             ][asp   ][agp   ][              ][      ][      ][      ]
-                    sc.serialWrite(b'\x16\x55\00\00\x00\x64\xFF\xff\xff\xfc\xA0\x40\x00\x42\x00\x00\x01\x40\x00\x00\x01\x40\x00\x00\x78\xFF\xff\xff\xfc\x40\x64\x00\x08\x00\x0A\x00\x1E')
+                    sc.serialWrite(b'\x16\x22\00\00\x00\x64\xFF\xff\xff\xfc\xA0\x40\x00\x42\x00\x00\x01\x40\x00\x00\x01\x40\x00\x00\x78\xFF\xff\xff\xfc\x40\x64\x00\x08\x00\x0A\x00\x1E')
                     print("x16 sended")
                     print("extendbit sended")
                     temp = sc.serialRead()
@@ -572,8 +572,6 @@ class DCMWindow(tk.Frame):
                     text = {self.PARAMLABELS[i]: self.__entryArr[i].get()}
                     alt.writeText(text)
 
-        print(arr)
-        sc.serialWrite(b'\x16\x55\00\00\x00\x64\00\x3c\x00\x00\xA0\x40\x00\x42\x00\x00\x01\x40\x00\x00\x01\x40\x00\x00\x78\x00\x78\x00\x80\x40\x64\x00\x08\x00\x0A\x00\x1E')
         
         val = b'\x16\x55'
         for item in arr:

@@ -1,7 +1,11 @@
 import time
-import
 
 # 线程函数，用于在DCM窗口上绘制ECG图
+class rander:
+    def __init__(self):
+        self.__displayGraph
+        self.__annotations__
+        
     def __displayGraph(self):
         """线程函数，用于绘制ECG图
         """

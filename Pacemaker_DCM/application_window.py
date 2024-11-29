@@ -2,9 +2,9 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from serial_controller import SerialManager  # 导入新创建的 SerialManager 类
 from ParameterManager import ParameterManager
-import pickle  # 用于保存和加载用户参数
 from serial_controller import SerialManager
-
+from file_io import FileIO
+import os
 class ApplicationWindow:
     def __init__(self, root, username):
         self.root = root
@@ -14,7 +14,6 @@ class ApplicationWindow:
         self.username = username  # 当前登录的用户名
         self.parameter_manager = ParameterManager()  # 参数管理实例
         self.user_parameters = self.load_user_parameters()  # 加载用户参数
-
         self.serial_manager = SerialManager()  # 创建 SerialManager 实例
 
         # 布局创建
@@ -29,7 +28,7 @@ class ApplicationWindow:
         header_frame = tk.Frame(self.root)
         header_frame.pack(pady=10, fill=tk.X)
 
-        user_label = tk.Label(header_frame, text=f"Logged in as: {self.username}", font=("Arial", 12))
+        user_label = tk.Label(header_frame, text=f"Logged in as: {self.username}")
         user_label.pack(side=tk.LEFT, padx=10)
 
         exit_button = tk.Button(header_frame, text="Exit", command=self.root.quit)
@@ -40,14 +39,13 @@ class ApplicationWindow:
         mode_frame = tk.Frame(self.root)
         mode_frame.pack(pady=10)
 
-        mode_label = tk.Label(mode_frame, text="Select Pacing Mode:", font=("Arial", 12))
+        mode_label = tk.Label(mode_frame, text="Select Mode:")
         mode_label.pack(side=tk.LEFT, padx=10)
 
         self.pacing_mode_var = tk.StringVar(value="None")
         self.pacing_mode_dropdown = ttk.Combobox(mode_frame, textvariable=self.pacing_mode_var)
         self.pacing_mode_dropdown["values"] = [
-            "None", "AOO", "VOO", "AAI", "VVI", "AOOR", "AAIR", "VOOR", "VVIR", "DDD", "DDDR"
-        ]
+            "None", "AOO", "VOO", "AAI", "VVI", "AOOR", "AAIR", "VOOR", "VVIR"]
         self.pacing_mode_dropdown.pack(side=tk.LEFT, padx=10)
         self.pacing_mode_dropdown.bind("<<ComboboxSelected>>", self.update_parameters)
 
@@ -59,11 +57,10 @@ class ApplicationWindow:
 
         # 字段名称列表
         field_names = [
-            "Lower Rate Limit", "Upper Rate Limit", "Atrial Amplitude", "Atrial Pulse Width",
-            "Ventricular Amplitude", "Ventricular Pulse Width", "VRP", "ARP", "PVARP",
-            "Maximum Sensor Rate", "Fixed AV Delay", "Ventricular Sensitivity",
-            "Hysteresis", "Rate Smoothing", "Activity Threshold", "Reaction Time",
-            "Response Factor", "Recovery Time"
+            "Ampitute","LRL",
+            "Pulsewidth", "Threshold" , "ARP",
+            "VRP", "URL", "MSR", "Activity_Threshold",
+            "Response_Factor", "Reaction_time", "Recovery_time"
         ]
 
         # 每排字段数量
@@ -73,8 +70,8 @@ class ApplicationWindow:
             column = i // fields_per_column  # 根据索引计算列号
             row = i % fields_per_column  # 根据索引计算行号
 
-            label = tk.Label(param_frame, text=f"{field_name}:", font=("Arial", 10))
-            entry = tk.Entry(param_frame, font=("Arial", 10))
+            label = tk.Label(param_frame, text=f"{field_name}:")
+            entry = tk.Entry(param_frame)
 
             label.grid(row=row, column=column * 2, sticky=tk.E, padx=10, pady=5)  # label 在偶数列
             entry.grid(row=row, column=column * 2 + 1, sticky=tk.W, padx=10, pady=5)  # entry 在奇数列
@@ -92,6 +89,12 @@ class ApplicationWindow:
 
         send_button = tk.Button(button_frame, text="Send Data", command=self.send_parameters)
         send_button.pack(side=tk.LEFT, padx=20)
+        
+        save_button = tk.Button(button_frame, text="Save Data", command=self.save_user_parameters)
+        save_button.pack(side=tk.LEFT, padx=20)
+        
+        egdiagrom_button = tk.Button(button_frame, text="Display EGDIAGRAM", command=self.send_parameters)
+        egdiagrom_button.pack(side=tk.LEFT, padx=20)
 
     def create_status_display(self):
         """创建连接状态显示区域，并添加串口选择下拉菜单。"""
@@ -99,7 +102,7 @@ class ApplicationWindow:
         status_frame.pack(pady=10)
 
         # 状态显示标签
-        self.status_label = tk.Label(status_frame, text="Device not connected", font=("Arial", 12), fg="red")
+        self.status_label = tk.Label(status_frame, text="Device not connected")
         self.status_label.pack(side=tk.LEFT, padx=10)
 
         # 串口选择下拉菜单
@@ -132,20 +135,27 @@ class ApplicationWindow:
         if selected_port and selected_port != "No COM Ports Available":
             self.serial_manager.port = selected_port  # 更新 SerialManager 的端口
             if self.serial_manager.connect():
-                self.status_label.config(text=f"Connected to {selected_port}", fg="green")
+                self.status_label.config(text=f"Connected to {selected_port}")
             else:
-                self.status_label.config(text=f"Failed to connect to {selected_port}", fg="red")
+                self.status_label.config(text=f"Failed to connect to {selected_port}")
         else:
             messagebox.showerror("Error", "No valid COM port selected")
 
     def send_parameters(self):
         """将参数打包并通过串口发送。"""
         field_values = {  # 从输入框中获取字段值
-            "Lower Rate Limit": self.fields["Lower Rate Limit"].get(),
-            "Upper Rate Limit": self.fields["Upper Rate Limit"].get(),
-            "Atrial Amplitude": self.fields["Atrial Amplitude"].get(),
-            "Ventricular Amplitude": self.fields["Ventricular Amplitude"].get(),
-            # 添加更多字段
+            "Ampitute": self.fields["Ampitute"].get(),
+            "LRL": self.fields["LRL"].get(),
+            "Pulsewidth": self.fields["Pulsewidth"].get(),
+            "Threshold": self.fields["Threshold"].get(),
+            "ARP": self.fields["ARP"].get(),
+            "VRP": self.fields["VRP"].get(),
+            "URL": self.fields["URL"].get(),
+            "MSR": self.fields["MSR"].get(),
+            "Activity_Threshold": self.fields["Activity_Threshold"].get(),
+            "Response_Factor": self.fields["Response_Factor"].get(),
+            "Reaction_time": self.fields["Reaction_time"].get(),
+            "Recovery_time": self.fields["Recovery_time"].get(),
         }
 
         if not self.serial_manager.is_connected():
@@ -183,25 +193,39 @@ class ApplicationWindow:
     def get_relevant_parameters_for_mode(self, mode):
         """根据模式获取相关参数字段。"""
         relevant_params = {
-            "AOO": ["Lower Rate Limit", "Upper Rate Limit", "Atrial Amplitude", "Atrial Pulse Width"],
-            "AAI": ["Lower Rate Limit", "Upper Rate Limit", "Atrial Amplitude", "Atrial Pulse Width", "ARP"],
-            # 添加更多模式及其相关参数
+            "AOO": ["LRL", "URL", "Pulsewidth"],
+            "AAI": ["LRL", "URL", "Amplitude", "Pulsewidth", "ARP"],
         }
         return relevant_params.get(mode, [])
 
     def load_user_parameters(self):
         """加载用户参数。"""
         try:
-            with open("users.dat", "rb") as file:
-                return pickle.load(file)
-        except FileNotFoundError:
+            FileIO.load_parameter(self.username)
+        except:
             return {}
 
     def save_user_parameters(self):
-        """保存用户参数。"""
-        self.user_parameters[self.username] = self.parameter_manager
-        with open("users.dat", "wb") as file:
-            pickle.dump(self.user_parameters, file)
+        field_values = {  
+            "Amplitude": self.fields["Amplitude"].get() or 0,  # 如果没有值，则使用默认值0
+            "LRL": self.fields["LRL"].get() or 0,
+            "Pulsewidth": self.fields["Pulsewidth"].get() or 0,
+            "Threshold": self.fields["Threshold"].get() or 0,
+            "ARP": self.fields["ARP"].get() or 0,
+            "VRP": self.fields["VRP"].get() or 0,
+            "URL": self.fields["URL"].get() or 0,
+            "MSR": self.fields["MSR"].get() or 0,
+            "Activity_Threshold": self.fields["Activity_Threshold"].get() or 0,
+            "Response_Factor": self.fields["Response_Factor"].get() or 0,
+            "Reaction_time": self.fields["Reaction_time"].get() or 0,
+            "Recovery_time": self.fields["Recovery_time"].get() or 0,
+        }
+        print(field_values)
+        username = self.username
+        print(username)
+        file_io = FileIO(os.path.dirname(os.path.abspath(__file__)))
+        success = file_io.write_parameter(field_values,username)
+        if success: print("lol")
 
 
 if __name__ == "__main__":

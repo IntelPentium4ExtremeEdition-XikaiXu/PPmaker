@@ -1,70 +1,39 @@
 class ParameterManager:
     def __init__(self):
+        #default val
+        self.__amplitude = 100
         self.__lrl = 60
-        self.__url = 120
-        self.__msr = 120
-        self.__fixed_av_delay = 150
-        self.__atrial_amplitude = 5
-        self.__ventricular_amplitude = 5
-        self.__atrial_pulse_width = 1
-        self.__ventricular_pulse_width = 1
-        self.__atrial_sensitivity = 0.1
-        self.__ventricular_sensitivity = 0.1
-        self.__arp = 250
+        self.__pulse_width = 0.4
+        self.__threshold = 66
+        self.__arp = 320
         self.__vrp = 320
-        self.__pvarp = 250
-        self.__hysteresis = 0
-        self.__rate_smoothing = 0
-        self.__activity_threshold = 1.6 # Med
-        self.__reaction_time = 30
+        self.__url = 120        
+        self.__msr = 120
+        self.__activity_threshold = 1.1 # Med
         self.__response_factor = 8
-        self.__recovery_time = 300  # sec = 5 min
+        self.__reaction_time = 10
+        self.__recovery_time = 30  # sec = 5 min
+        
+    def getAmplitude(self):
+        return self.__amplitude if self.__amplitude != 0 else 0
 
     def getLowerRateLimit(self):
         return self.__lrl
-
-    def getUpperRateLimit(self):
-        return self.__url
-
-    def getMaximumSensorRate(self):
-        return self.__msr
-
-    def getFixedAVDelay(self):
-        return self.__fixed_av_delay
-
-    def getAtrialAmplitude(self):
-        return self.__atrial_amplitude if self.__atrial_amplitude != 0 else 0
-
-    def getVentricularAmplitude(self):
-        return self.__ventricular_amplitude if self.__ventricular_amplitude != 0 else 0
-
-    def getAtrialPulseWidth(self):
-        return self.__atrial_pulse_width
-
-    def getVentricularPulseWidth(self):
-        return self.__ventricular_pulse_width
-
-    def getAtrialSensitivity(self):
-        return self.__atrial_sensitivity
-
-    def getVentricularSensitivity(self):
-        return self.__ventricular_sensitivity
-
+    
+    def getPulseWidth(self):
+        return self.__pulse_width
+    
+    def getthresholf(self):
+        return self.__threshold
+    
     def getARP(self):
         return self.__arp
-
     def getVRP(self):
         return self.__vrp
-
-    def getPVARP(self):
-        return self.__pvarp
-
-    def getHysteresis(self):
-        return self.__hysteresis if self.__hysteresis != 0 else 0
-
-    def getRateSmoothing(self):
-        return self.__rate_smoothing
-
+    def getUpperRateLimit(self):
+        return self.__url
+    def getMSR(self):
+        return self.__msr
     def getActivityThreshold(self):
         if self.__activity_threshold - 1.13 < 0.01:
             return 'V-L'
@@ -80,17 +49,31 @@ class ParameterManager:
             return 'H'
         elif self.__activity_threshold == 3:
             return 'V-H'
-        return 0
-
-    def getReactionTime(self):
-        return self.__reaction_time
-
+        return 0    
     def getResponseFactor(self):
         return self.__response_factor
-
+    def getReactionTime(self):
+        return self.__reaction_time
     def getRecoveryTime(self):
         return round(self.__recovery_time / 60)
 
+    #set amp
+    def setAmplitude(self, val):
+        if str(val).casefold() == 'off'.casefold():
+            self.__amplitude = 0
+            return
+        if self.__is_num(val):
+            num = round(float(val), 1)
+            if num <= 5.0 and num >= 0.1:
+                self.__amplitude = num
+            elif round(float(val), 1) == 0:
+                self.__amplitude = 0
+            else:
+                raise IndexError
+        else:
+            raise TypeError
+        
+    #set lrl
     def setLowerRateLimit(self, val):
         if self.__is_num(val):
             num = 5 * round(float(val) / 5)
@@ -102,7 +85,45 @@ class ParameterManager:
                 raise IndexError
         else:
             raise TypeError
+    
+    #set p_w    
+    def setPulseWidth(self, val):
+        if self.__is_num(val):
+            if 0 <= round(float(val)) <= 50:
+                self.__pulse_width = round(float(val))
+            else:
+                raise IndexError
+        else:
+            raise TypeError
 
+    #set threshold
+    def setThreshold(self,val):
+        if self.__is_num(val):
+            self.__threshold = val
+        else:
+            raise IndexError
+        
+    #set arp
+    def setARP(self, val):
+        if self.__is_num(val):
+            if 150 <= int(round(float(val), -1)) <= 500:
+                self.__arp = int(round(float(val), -1))
+            else:
+                raise IndexError
+        else:
+            raise TypeError   
+    
+    #set vrp
+    def setVRP(self, val):
+        if self.__is_num(val):
+            if 150 <= int(round(float(val), -1)) <= 500:
+                self.__vrp = int(round(float(val), -1))
+            else:
+                raise IndexError
+        else:
+            raise TypeError
+    
+    #set url
     def setUpperRateLimit(self, val):
         if self.__is_num(val):
             num = 5 * round(float(val) / 5)
@@ -112,7 +133,8 @@ class ParameterManager:
                 raise IndexError
         else:
             raise TypeError
-
+        
+    #set msr
     def setMaximumSensorRate(self, val):
         if self.__is_num(val):
             num = 5 * round(float(val) / 5)
@@ -122,130 +144,22 @@ class ParameterManager:
                 raise IndexError
         else:
             raise TypeError
-
-    def setFixedAVDelay(self, val):
-        if self.__is_num(val):
-            if 70 <= val <= 300:
-                self.__fixed_av_delay = val
-            else:
-                raise IndexError
-        else:
-            raise TypeError
-
-    def setAtrialAmplitude(self, val):
-        if str(val).casefold() == 'off'.casefold():
-            self.__atrial_amplitude = 0
-            return
-        if self.__is_num(val):
-            num = round(float(val), 1)
-            if num <= 5.0 and num >= 0.1:
-                self.__atrial_amplitude = num
-            elif round(float(val), 1) == 0:
-                self.__atrial_amplitude = 0
-            else:
-                raise IndexError
-        else:
-            raise TypeError
-
-    def setVentricularAmplitude(self, val):
-        if str(val).casefold() == 'off'.casefold():
-            self.__ventricular_amplitude = 0
-            return
-        if self.__is_num(val):
-            num = round(float(val), 1)
-            if num <= 5.0 and num >= 0.1:
-                self.__ventricular_amplitude = num
-            elif round(float(val), 1) == 0:
-                self.__ventricular_amplitude = 0
-            else:
-                raise IndexError
-        else:
-            raise TypeError
-
-    def setAtrialPulseWidth(self, val):
-        if self.__is_num(val):
-            if 1 <= round(float(val)) <= 30:
-                self.__atrial_pulse_width = round(float(val))
-            else:
-                raise IndexError
-        else:
-            raise TypeError
-
-    def setVentricularPulseWidth(self, val):
-        if self.__is_num(val):
-            if 1 <= round(float(val)) <= 30:
-                self.__ventricular_pulse_width = round(float(val))
-            else:
-                raise IndexError
-        else:
-            raise TypeError
-
-    def setAtrialSensitivity(self, val):
-        if self.__is_num(val):
-            if 0 <= round(float(val), 1) <= 5.0:
-                self.__atrial_sensitivity = round(float(val), 1)
-            else:
-                raise IndexError
-        else:
-            raise TypeError
-
-    def setVentricularSensitivity(self, val):
-        if self.__is_num(val):
-            if 0 <= round(float(val), 1) <= 5.0:
-                self.__ventricular_sensitivity = round(float(val), 1)
-            else:
-                raise IndexError
-        else:
-            raise TypeError
-
-    def setARP(self, val):
-        if self.__is_num(val):
-            if 150 <= int(round(float(val), -1)) <= 500:
-                self.__arp = int(round(float(val), -1))
-            else:
-                raise IndexError
-        else:
-            raise TypeError
-
-    def setVRP(self, val):
-        if self.__is_num(val):
-            if 150 <= int(round(float(val), -1)) <= 500:
-                self.__vrp = int(round(float(val), -1))
-            else:
-                raise IndexError
-        else:
-            raise TypeError
-
-    def setPVARP(self, val):
-        if self.__is_num(val):
-            if 150 <= int(round(float(val), -1)) <= 500:
-                self.__pvarp = int(round(float(val), -1))
-            else:
-                raise IndexError
-        else:
-            raise TypeError
-
-    def setHysteresis(self, val):
-        if str(val).casefold() == 'off'.casefold():
-            self.__hysteresis = 0
-            return
-        if self.__is_num(val):
-            num = 5 * round(float(val) / 5)
-            if 50 <= round(float(val)) <= 90 or (30 <= num <= 50) or (90 <= num <= 175):
-                self.__hysteresis = num
-            elif round(float(val)) == 0:
-                self.__hysteresis = 0
-            else:
-                raise IndexError
-        else:
-            raise TypeError
-
-    def setRateSmoothing(self, val):
-        self.__rate_smoothing = round(float(val))
-
+        
+    #setActivityThreshold
     def setActivityThreshold(self, val):
         self.__activity_threshold = float(val)
 
+    #set spf
+    def setResponseFactor(self, val):
+        if self.__is_num(val):
+            if 1 <= round(float(val)) <= 16:
+                self.__response_factor = round(float(val))
+            else:
+                raise IndexError
+        else:
+            raise TypeError
+
+    #set reaction time
     def setReactionTime(self, val):
         if self.__is_num(val):
             num = 10 * round(float(val) / 10)
@@ -256,15 +170,7 @@ class ParameterManager:
         else:
             raise TypeError
 
-    def setResponseFactor(self, val):
-        if self.__is_num(val):
-            if 1 <= round(float(val)) <= 16:
-                self.__response_factor = round(float(val))
-            else:
-                raise IndexError
-        else:
-            raise TypeError
-
+    #set recovery time 
     def setRecoveryTime(self, val):
         if self.__is_num(val):
             if 2 <= round(float(val)) <= 16:

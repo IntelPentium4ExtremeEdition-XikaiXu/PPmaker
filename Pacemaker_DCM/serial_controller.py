@@ -52,7 +52,7 @@ class SerialManager:
     def build_data_packet(self, field_values):
         """根据字段值构建数据包"""
         try:
-            header = struct.pack('<2B', 0x16, 0x55)  # 示例头部
+            header = struct.pack(0x16, 0x55)  # 示例头部
             data_format = '<4B2f2B2f3Hf2B1H'  # 示例数据格式
             data = struct.pack(
                 data_format,
